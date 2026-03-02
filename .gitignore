@@ -1,0 +1,17 @@
+# Build output
+main.js
+styles.css
+
+# Dependencies
+node_modules/
+
+# IDE
+.idea/
+.vscode/
+
+# OS
+.DS_Store
+
+# npm/pnpm debug logs
+npm-debug.log*
+pnpm-debug.log*
