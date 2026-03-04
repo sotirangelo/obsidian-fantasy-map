@@ -1,0 +1,23 @@
+{
+  "maps": [
+    {
+      "id": "369e2c5a-7e02-4ffd-9a7d-6a4f474b1344",
+      "name": "Asteig",
+      "mapImagePath": "asteig.png",
+      "layers": [
+        {
+          "id": "072d7f6a-792e-46e3-9511-66be7f2644a7",
+          "name": "nobles"
+        }
+      ],
+      "defaultLayerId": "072d7f6a-792e-46e3-9511-66be7f2644a7"
+    },
+    {
+      "id": "3e7193e1-7bc0-499d-9ba5-4a3976c0aba0",
+      "name": "Scanned",
+      "mapImagePath": "Scan.png",
+      "layers": [],
+      "defaultLayerId": ""
+    }
+  ]
+}

@@ -1,8 +1,11 @@
-import { App, Modal, Setting } from "obsidian";
+import { App, Modal } from "obsidian";
+import { mount, unmount } from "svelte";
+import ConfirmDelete from "../components/ConfirmDelete.svelte";
 
 export class DeleteConfirmModal extends Modal {
   private markerName: string;
   private onConfirm: () => void;
+  private mountedPanel: ReturnType<typeof mount> | null = null;
 
   constructor(app: App, markerName: string, onConfirm: () => void) {
     super(app);
@@ -11,30 +14,26 @@ export class DeleteConfirmModal extends Modal {
   }
 
   onOpen(): void {
-    const { contentEl } = this;
-    contentEl.createEl("h2", { text: "Delete marker" });
-    contentEl.createEl("p", {
-      text: `Are you sure you want to delete "${this.markerName}"?`,
-    });
-
-    new Setting(contentEl)
-      .addButton((btn) =>
-        btn.setButtonText("Cancel").onClick(() => {
+    this.mountedPanel = mount(ConfirmDelete, {
+      target: this.contentEl,
+      props: {
+        markerName: this.markerName,
+        onConfirm: () => {
           this.close();
-        }),
-      )
-      .addButton((btn) =>
-        btn
-          .setButtonText("Delete")
-          .setWarning()
-          .onClick(() => {
-            this.close();
-            this.onConfirm();
-          }),
-      );
+          this.onConfirm();
+        },
+        onCancel: () => {
+          this.close();
+        },
+      },
+    });
   }
 
   onClose(): void {
+    if (this.mountedPanel) {
+      unmount(this.mountedPanel);
+      this.mountedPanel = null;
+    }
     this.contentEl.empty();
   }
 }

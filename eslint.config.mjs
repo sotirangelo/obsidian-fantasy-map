@@ -32,6 +32,7 @@ export default defineConfig(
     "eslint.config.mjs",
     "esbuild.config.mjs",
     "package.json",
+    "src/**/*.svelte",
   ]),
   eslintConfigPrettier,
 );
