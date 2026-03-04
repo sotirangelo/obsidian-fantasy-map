@@ -110,6 +110,15 @@
   cursor: crosshair;
 }
 
+.leaflet-container.is-measuring {
+  cursor: crosshair;
+}
+
+.fantasy-map-measure-popup .leaflet-popup-content {
+  margin: 6px 10px;
+  font-size: 0.9em;
+}
+
 .fantasy-map-notice,
 .fantasy-map-error {
   padding: 2em;

@@ -53,7 +53,7 @@ export class PolygonModal extends Modal {
           }).open();
         },
         onLinkLocalMap: this.onLinkLocalMap
-          ? (cb: (mapId: string) => void) => this.onLinkLocalMap!(this.properties.id, cb)
+          ? (cb: (mapId: string) => void) => { this.onLinkLocalMap!(this.properties.id, cb); }
           : undefined,
         onSubmit: (props: PolygonProperties, layerId: string) => {
           this.close();
