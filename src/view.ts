@@ -41,6 +41,7 @@ interface SidebarState {
 export const FANTASY_MAP_VIEW = "fantasy-map-view";
 
 type CalibrationMode = "off" | "point1" | "point2";
+type MeasureMode = "off" | "point1" | "point2";
 
 export class FantasyMapView extends ItemView {
   plugin: FantasyMapPlugin;
@@ -59,6 +60,12 @@ export class FantasyMapView extends ItemView {
   private calPoint1: L.LatLng | null = null;
   private calTempLayers: L.Layer[] = [];
   private scaleBarControl: L.Control | null = null;
+
+  // Measure distance state
+  private measureMode: MeasureMode = "off";
+  private measurePoint1: L.LatLng | null = null;
+  private measureTempLayers: L.Layer[] = [];
+  private measureResultPopup: L.Popup | null = null;
 
   constructor(leaf: WorkspaceLeaf, plugin: FantasyMapPlugin) {
     super(leaf);
@@ -178,6 +185,10 @@ export class FantasyMapView extends ItemView {
     this.calPoint1 = null;
     this.calTempLayers = [];
     this.scaleBarControl = null;
+    this.measureMode = "off";
+    this.measurePoint1 = null;
+    this.measureTempLayers = [];
+    this.measureResultPopup = null;
   }
 
   async onClose(): Promise<void> {
@@ -247,6 +258,9 @@ export class FantasyMapView extends ItemView {
     // Set Scale button
     this.addSetScaleControl();
 
+    // Measure Distance button
+    this.addMeasureControl();
+
     // Add Layer button
     this.addAddLayerControl(config);
 
@@ -273,10 +287,14 @@ export class FantasyMapView extends ItemView {
     });
 
     // Click on map background deselects the current feature
-    // Also handles calibration point clicks
+    // Also handles calibration and measure clicks
     this.map.on("click", (e: L.LeafletMouseEvent) => {
       if (this.calMode !== "off") {
         this.handleCalibrationClick(e.latlng);
+        return;
+      }
+      if (this.measureMode !== "off") {
+        this.handleMeasureClick(e.latlng);
         return;
       }
       this.selectFeature(null);
@@ -285,6 +303,7 @@ export class FantasyMapView extends ItemView {
     // Right-click to add a marker
     this.map.on("contextmenu", (e: L.LeafletMouseEvent) => {
       if (this.calMode !== "off") return;
+      if (this.measureMode !== "off") return;
       this.showAddMarkerMenu(e);
     });
   }
@@ -437,6 +456,119 @@ export class FantasyMapView extends ItemView {
       this.map?.removeLayer(layer);
     }
     this.calTempLayers = [];
+  }
+
+  // --- Measure Distance ---
+
+  private addMeasureControl(): void {
+    if (!this.map) return;
+
+    const MeasureControl = L.Control.extend({
+      onAdd: () => {
+        const btn = L.DomUtil.create(
+          "button",
+          "leaflet-bar fantasy-map-measure-btn",
+        );
+        btn.textContent = "Measure";
+        btn.title = "Measure distance between two points";
+        L.DomEvent.on(btn, "click", (e) => {
+          L.DomEvent.stopPropagation(e);
+          this.startMeasure();
+        });
+        return btn;
+      },
+    });
+
+    new MeasureControl({ position: "topleft" }).addTo(this.map);
+  }
+
+  private startMeasure(): void {
+    if (!this.map) return;
+    this.clearMeasureLayers();
+    this.measureMode = "point1";
+    this.map.getContainer().classList.add("is-measuring");
+    new Notice("Click the first point to measure from");
+  }
+
+  private handleMeasureClick(latlng: L.LatLng): void {
+    if (!this.map) return;
+
+    if (this.measureMode === "point1") {
+      this.measurePoint1 = latlng;
+      const dot = L.circleMarker(latlng, {
+        radius: 6,
+        color: "#3498db",
+        fillColor: "#3498db",
+        fillOpacity: 1,
+      }).addTo(this.map);
+      this.measureTempLayers.push(dot);
+      this.measureMode = "point2";
+      new Notice("Click the second point to measure to");
+    } else if (this.measureMode === "point2" && this.measurePoint1) {
+      const p1 = this.measurePoint1;
+
+      const dot2 = L.circleMarker(latlng, {
+        radius: 6,
+        color: "#3498db",
+        fillColor: "#3498db",
+        fillOpacity: 1,
+      }).addTo(this.map);
+      this.measureTempLayers.push(dot2);
+
+      const line = L.polyline([p1, latlng], {
+        color: "#3498db",
+        dashArray: "6,4",
+        weight: 2,
+      }).addTo(this.map);
+      this.measureTempLayers.push(line);
+
+      this.measureMode = "off";
+      this.map.getContainer().classList.remove("is-measuring");
+
+      const pxDist = pixelDistance(
+        [p1.lat, p1.lng],
+        [latlng.lat, latlng.lng],
+      );
+
+      const config = this.getMapConfig();
+      let label: string;
+      if (config?.scale) {
+        const scale = config.scale;
+        const unitsPerPixel = scale.realDistance / scale.pixelDistance;
+        const realDist = pxDist * unitsPerPixel;
+        const rounded =
+          realDist >= 10
+            ? Math.round(realDist).toString()
+            : realDist.toFixed(1);
+        label = `${rounded} ${scale.unit}`;
+      } else {
+        label = `${Math.round(pxDist).toString()} px (no scale set)`;
+      }
+
+      const midLat = (p1.lat + latlng.lat) / 2;
+      const midLng = (p1.lng + latlng.lng) / 2;
+      this.measureResultPopup = L.popup({ closeButton: true, className: "fantasy-map-measure-popup" })
+        .setLatLng([midLat, midLng])
+        .setContent(`<strong>${label}</strong>`)
+        .openOn(this.map);
+
+      this.measureResultPopup.on("remove", () => {
+        this.clearMeasureLayers();
+      });
+    }
+  }
+
+  private clearMeasureLayers(): void {
+    for (const layer of this.measureTempLayers) {
+      this.map?.removeLayer(layer);
+    }
+    this.measureTempLayers = [];
+    if (this.measureResultPopup) {
+      this.map?.closePopup(this.measureResultPopup);
+      this.measureResultPopup = null;
+    }
+    this.measurePoint1 = null;
+    this.map?.getContainer().classList.remove("is-measuring");
   }
 
   private renderScaleBar(config: MapConfig): void {
@@ -693,7 +825,7 @@ export class FantasyMapView extends ItemView {
         }
       },
       this.mapId
-        ? (featureId, cb) => this.openLinkLocalMapForNew(featureId, cb)
+        ? (featureId, cb) => { this.openLinkLocalMapForNew(featureId, cb); }
         : undefined,
     );
     modal.open();
@@ -761,7 +893,7 @@ export class FantasyMapView extends ItemView {
         this.refreshMapLayers();
       },
       this.mapId
-        ? (featureId, cb) => this.openLinkLocalMapForNew(featureId, cb)
+        ? (featureId, cb) => { this.openLinkLocalMapForNew(featureId, cb); }
         : undefined,
     );
     modal.open();
