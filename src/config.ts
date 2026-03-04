@@ -8,7 +8,7 @@ export const MAP_CONFIG = {
 } satisfies L.MapOptions;
 
 export const GEOMAN_CONFIG = {
-  position: "topleft" as const,
+  position: "bottomright" as const,
   drawMarker: true,
   drawCircleMarker: false,
   drawPolyline: false,

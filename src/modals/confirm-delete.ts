@@ -31,7 +31,7 @@ export class DeleteConfirmModal extends Modal {
 
   onClose(): void {
     if (this.mountedPanel) {
-      unmount(this.mountedPanel);
+      void unmount(this.mountedPanel);
       this.mountedPanel = null;
     }
     this.contentEl.empty();

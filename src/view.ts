@@ -14,7 +14,14 @@ import { loadConfiguredLayers } from "./layers";
 import { createMarkerFromFeature, fixLeafletDefaultIcons } from "./markers";
 import { MarkerModal, DeleteConfirmModal } from "./modals";
 import { MAP_CONFIG, GEOMAN_CONFIG } from "./config";
-import MarkerPopup from "./components/MarkerPopup.svelte";
+import MarkerSidebar from "./components/MarkerSidebar.svelte";
+
+interface SidebarState {
+  properties: MarkerProperties;
+  onOpenNote: (path: string) => void;
+  onEdit: () => void;
+  onDelete: () => void;
+}
 
 export const FANTASY_MAP_VIEW = "fantasy-map-view";
 
@@ -26,6 +33,9 @@ export class FantasyMapView extends ItemView {
   mapId: string | null = null;
   private blobUrl: string | null = null;
   private layerControl: L.Control.Layers | null = null;
+  private sidebarEl: HTMLDivElement | null = null;
+  private sidebarComponent: ReturnType<typeof mount> | null = null;
+  private updateSidebar: ((state: SidebarState | null) => void) | null = null;
 
   constructor(leaf: WorkspaceLeaf, plugin: FantasyMapPlugin) {
     super(leaf);
@@ -87,7 +97,19 @@ export class FantasyMapView extends ItemView {
       return;
     }
 
+    this.sidebarEl = container.createDiv({
+      cls: "fantasy-map-sidebar fantasy-map-sidebar--hidden",
+    });
+
     this.mapContainerEl = container.createDiv({ cls: "fantasy-map-container" });
+    this.sidebarComponent = mount(MarkerSidebar, {
+      target: this.sidebarEl,
+      props: {
+        registerUpdate: (fn: (state: SidebarState | null) => void) => {
+          this.updateSidebar = fn;
+        },
+      },
+    });
 
     try {
       const imageUrl = await this.getImageUrl(config.mapImagePath);
@@ -121,6 +143,12 @@ export class FantasyMapView extends ItemView {
       URL.revokeObjectURL(this.blobUrl);
       this.blobUrl = null;
     }
+    if (this.sidebarComponent) {
+      void unmount(this.sidebarComponent);
+      this.sidebarComponent = null;
+    }
+    this.updateSidebar = null;
+    this.sidebarEl = null;
     this.layers = [];
     this.layerControl = null;
   }
@@ -172,14 +200,18 @@ export class FantasyMapView extends ItemView {
 
     this.map = L.map(this.mapContainerEl, {
       crs: L.CRS.Simple,
+      zoomControl: false,
       ...MAP_CONFIG,
     });
 
+    L.control.zoom({ position: "bottomright" }).addTo(this.map);
     L.imageOverlay(imageUrl, bounds).addTo(this.map);
     this.map.fitBounds(bounds);
 
     // Layer control for toggling overlay visibility
-    this.layerControl = L.control.layers({}, {}).addTo(this.map);
+    this.layerControl = L.control
+      .layers({}, {}, { position: "topright" })
+      .addTo(this.map);
 
     // Initialize Geoman controls - only marker drawing enabled for now
     this.map.pm.addControls(GEOMAN_CONFIG);
@@ -195,6 +227,11 @@ export class FantasyMapView extends ItemView {
 
         this.openAddMarkerModal(latlng);
       }
+    });
+
+    // Click on map background deselects the current marker
+    this.map.on("click", () => {
+      this.selectMarker(null);
     });
 
     // Also support right-click to add a marker
@@ -239,36 +276,19 @@ export class FantasyMapView extends ItemView {
   ): L.Marker {
     const marker = createMarkerFromFeature(feature, latlng);
 
-    const popupEl = document.createElement("div");
-    marker.bindPopup(popupEl, { minWidth: 200 });
-
-    let popupComponent: ReturnType<typeof mount> | null = null;
-
-    marker.on("popupopen", () => {
-      popupComponent = mount(MarkerPopup, {
-        target: popupEl,
-        props: {
-          properties: feature.properties,
-          onOpenNote: (path: string) => {
-            void this.app.workspace.openLinkText(path, "", false);
-          },
-          onEdit: () => {
-            this.map?.closePopup();
-            this.editMarker(feature.properties, layer);
-          },
-          onDelete: () => {
-            this.map?.closePopup();
-            this.deleteMarker(feature.properties, layer);
-          },
+    marker.on("click", () => {
+      this.selectMarker({
+        properties: feature.properties,
+        onOpenNote: (path: string) => {
+          void this.app.workspace.openLinkText(path, "", false);
+        },
+        onEdit: () => {
+          this.editMarker(feature.properties, layer);
+        },
+        onDelete: () => {
+          this.deleteMarker(feature.properties, layer);
         },
       });
-    });
-
-    marker.on("popupclose", () => {
-      if (popupComponent) {
-        unmount(popupComponent);
-        popupComponent = null;
-      }
     });
 
     // Save coordinates on drag end
@@ -391,6 +411,13 @@ export class FantasyMapView extends ItemView {
 
   // --- Utilities ---
 
+  private selectMarker(state: SidebarState | null): void {
+    this.updateSidebar?.(state);
+    if (this.sidebarEl) {
+      this.sidebarEl.classList.toggle("fantasy-map-sidebar--hidden", !state);
+    }
+  }
+
   private async saveLayer(layer: LoadedLayer): Promise<void> {
     const json = JSON.stringify(layer.data, null, 2);
     await this.app.vault.adapter.write(layer.filePath, json);
@@ -398,6 +425,8 @@ export class FantasyMapView extends ItemView {
 
   private refreshMapLayers(): void {
     if (!this.map) return;
+
+    this.selectMarker(null);
 
     for (const layer of this.layers) {
       if (layer.leafletLayer) {
