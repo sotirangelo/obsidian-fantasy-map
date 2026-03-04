@@ -1,5 +1,6 @@
 import * as L from "leaflet";
 import type { MapFeature } from "./types";
+import { MARKER_ICON_SIZE, MARKER_ICON_ANCHOR, MARKER_POPUP_ANCHOR } from "./config";
 
 // @ts-ignore - esbuild converts these to data URLs
 import iconUrl from "leaflet/dist/images/marker-icon.png";
@@ -28,9 +29,9 @@ export function createMarkerFromFeature(
     markerOptions.icon = L.divIcon({
       className: "fantasy-map-marker-icon",
       html: `<span class="marker-emoji">${props.icon}</span>`,
-      iconSize: [32, 32],
-      iconAnchor: [16, 32],
-      popupAnchor: [0, -32],
+      iconSize: MARKER_ICON_SIZE,
+      iconAnchor: MARKER_ICON_ANCHOR,
+      popupAnchor: MARKER_POPUP_ANCHOR,
     });
   }
 

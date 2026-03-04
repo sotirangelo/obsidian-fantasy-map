@@ -11,6 +11,7 @@ import type {
 import { loadAllLayers, ensureLayerFolder } from "./layers";
 import { createMarkerFromFeature, fixLeafletDefaultIcons } from "./markers";
 import { MarkerModal, DeleteConfirmModal } from "./modals";
+import { MAP_CONFIG, GEOMAN_CONFIG } from "./config";
 
 export const FANTASY_MAP_VIEW = "fantasy-map-view";
 
@@ -166,31 +167,14 @@ export class FantasyMapView extends ItemView {
 
     this.map = L.map(this.mapContainerEl, {
       crs: L.CRS.Simple,
-      minZoom: -5,
-      maxZoom: 5,
-      zoomSnap: 0.25,
-      zoomDelta: 0.5,
+      ...MAP_CONFIG,
     });
 
     L.imageOverlay(imageUrl, bounds).addTo(this.map);
     this.map.fitBounds(bounds);
 
     // Initialize Geoman controls - only marker drawing enabled for now
-    this.map.pm.addControls({
-      position: "topleft",
-      drawMarker: true,
-      drawCircleMarker: false,
-      drawPolyline: false,
-      drawRectangle: false,
-      drawPolygon: false,
-      drawCircle: false,
-      drawText: false,
-      editMode: true,
-      dragMode: true,
-      cutPolygon: false,
-      removalMode: true,
-      rotateMode: false,
-    });
+    this.map.pm.addControls(GEOMAN_CONFIG);
 
     // When a marker is created via the Geoman toolbar
     this.map.on("pm:create", (e: { shape: string; layer: L.Layer }) => {

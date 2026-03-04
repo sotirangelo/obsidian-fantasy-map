@@ -7,6 +7,7 @@ import {
   Notice,
 } from "obsidian";
 import type { MapConfig, MarkerProperties } from "./types";
+import { DEFAULT_MARKER_COLOR } from "./config";
 
 export class MarkerModal extends Modal {
   private properties: MarkerProperties;
@@ -31,7 +32,7 @@ export class MarkerModal extends Modal {
           name: "",
           note: "",
           icon: "",
-          color: "#3388ff",
+          color: DEFAULT_MARKER_COLOR,
           description: "",
         };
     this.layerNames = layerNames;
