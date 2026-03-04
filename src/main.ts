@@ -1,9 +1,11 @@
 import { Notice, Plugin } from "obsidian";
+import * as v from "valibot";
 import { FantasyMapView, FANTASY_MAP_VIEW } from "./view";
 import { FantasyMapSettingTab } from "./settings";
 import { MapPickerModal } from "./modals";
 import { DEFAULT_SETTINGS } from "./types";
 import type { FantasyMapSettings } from "./types";
+import { FantasyMapSettingsSchema, LegacySettingsSchema } from "./schemas";
 
 export default class FantasyMapPlugin extends Plugin {
   settings: FantasyMapSettings = DEFAULT_SETTINGS;
@@ -74,39 +76,44 @@ export default class FantasyMapPlugin extends Plugin {
   }
 
   async loadSettings(): Promise<void> {
-    const data = await this.loadData();
-    if (data) {
-      // Migrate from old single-map settings to new multi-map format
-      if (data.mapImagePath !== undefined && data.maps === undefined) {
-        const oldPath = String(data.mapImagePath ?? "");
-        const oldFolder = String(data.layerFolder ?? "");
-        const oldDefault = String(data.defaultLayerFile ?? "");
+    const data: unknown = await this.loadData();
+    if (!data) return;
 
-        this.settings = {
-          maps: oldPath
-            ? [
-                {
-                  id: crypto.randomUUID(),
-                  name:
-                    oldPath
-                      .split("/")
-                      .pop()
-                      ?.replace(/\.\w+$/, "") ?? "Map",
-                  mapImagePath: oldPath,
-                  layerFolder: oldFolder,
-                  defaultLayerFile: oldDefault,
-                },
-              ]
-            : [],
-        };
-        await this.saveSettings();
-      } else {
-        this.settings = Object.assign(
-          {},
-          DEFAULT_SETTINGS,
-          data,
-        ) as FantasyMapSettings;
-      }
+    // Migrate from old single-map settings to new multi-map format
+    const legacyResult = v.safeParse(LegacySettingsSchema, data);
+    if (legacyResult.success) {
+      const { mapImagePath, layerFolder, defaultLayerFile } =
+        legacyResult.output;
+
+      this.settings = {
+        maps: mapImagePath
+          ? [
+              {
+                id: crypto.randomUUID(),
+                name:
+                  mapImagePath
+                    .split("/")
+                    .pop()
+                    ?.replace(/\.\w+$/, "") ?? "Map",
+                mapImagePath,
+                layerFolder,
+                defaultLayerFile,
+              },
+            ]
+          : [],
+      };
+      await this.saveSettings();
+      return;
+    }
+
+    const result = v.safeParse(FantasyMapSettingsSchema, data);
+    if (result.success) {
+      this.settings = result.output;
+    } else {
+      console.warn(
+        "Fantasy Map: Invalid settings data, using defaults",
+        result.issues,
+      );
     }
   }
 

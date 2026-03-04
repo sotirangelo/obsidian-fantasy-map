@@ -1,16 +1,9 @@
 import type * as L from "leaflet";
+import type * as v from "valibot";
+import type { MapConfigSchema, FantasyMapSettingsSchema } from "./schemas";
 
-export interface MapConfig {
-  id: string;
-  name: string;
-  mapImagePath: string;
-  layerFolder: string;
-  defaultLayerFile: string;
-}
-
-export interface FantasyMapSettings {
-  maps: MapConfig[];
-}
+export type MapConfig = v.InferOutput<typeof MapConfigSchema>;
+export type FantasyMapSettings = v.InferOutput<typeof FantasyMapSettingsSchema>;
 
 export const DEFAULT_SETTINGS: FantasyMapSettings = {
   maps: [],
