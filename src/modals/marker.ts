@@ -1,13 +1,7 @@
-import {
-  App,
-  Modal,
-  Setting,
-  FuzzySuggestModal,
-  TFile,
-  Notice,
-} from "obsidian";
-import type { MapConfig, MarkerProperties } from "./types";
-import { DEFAULT_MARKER_COLOR } from "./config";
+import { App, Modal, Setting, Notice } from "obsidian";
+import type { MarkerProperties } from "../types";
+import { DEFAULT_MARKER_COLOR } from "../config";
+import { NoteSuggestModal } from "./link-note";
 
 export class MarkerModal extends Modal {
   private properties: MarkerProperties;
@@ -133,90 +127,6 @@ export class MarkerModal extends Modal {
           this.onSubmit(this.properties, this.selectedLayerId);
         }),
     );
-  }
-
-  onClose(): void {
-    this.contentEl.empty();
-  }
-}
-
-class NoteSuggestModal extends FuzzySuggestModal<TFile> {
-  private onChooseCallback: (file: TFile) => void;
-
-  constructor(app: App, onChoose: (file: TFile) => void) {
-    super(app);
-    this.onChooseCallback = onChoose;
-  }
-
-  getItems(): TFile[] {
-    return this.app.vault.getMarkdownFiles();
-  }
-
-  getItemText(item: TFile): string {
-    return item.path;
-  }
-
-  onChooseItem(item: TFile): void {
-    this.onChooseCallback(item);
-  }
-}
-
-export class MapPickerModal extends FuzzySuggestModal<MapConfig> {
-  private maps: MapConfig[];
-  private onChooseCallback: (map: MapConfig) => void;
-
-  constructor(app: App, maps: MapConfig[], onChoose: (map: MapConfig) => void) {
-    super(app);
-    this.maps = maps;
-    this.onChooseCallback = onChoose;
-    this.setPlaceholder("Choose a map to open");
-  }
-
-  getItems(): MapConfig[] {
-    return this.maps;
-  }
-
-  getItemText(item: MapConfig): string {
-    return item.name || item.mapImagePath || item.id;
-  }
-
-  onChooseItem(item: MapConfig): void {
-    this.onChooseCallback(item);
-  }
-}
-
-export class DeleteConfirmModal extends Modal {
-  private markerName: string;
-  private onConfirm: () => void;
-
-  constructor(app: App, markerName: string, onConfirm: () => void) {
-    super(app);
-    this.markerName = markerName;
-    this.onConfirm = onConfirm;
-  }
-
-  onOpen(): void {
-    const { contentEl } = this;
-    contentEl.createEl("h2", { text: "Delete marker" });
-    contentEl.createEl("p", {
-      text: `Are you sure you want to delete "${this.markerName}"?`,
-    });
-
-    new Setting(contentEl)
-      .addButton((btn) =>
-        btn.setButtonText("Cancel").onClick(() => {
-          this.close();
-        }),
-      )
-      .addButton((btn) =>
-        btn
-          .setButtonText("Delete")
-          .setWarning()
-          .onClick(() => {
-            this.close();
-            this.onConfirm();
-          }),
-      );
   }
 
   onClose(): void {
