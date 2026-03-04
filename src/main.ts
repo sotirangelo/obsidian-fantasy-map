@@ -82,8 +82,7 @@ export default class FantasyMapPlugin extends Plugin {
     // Migrate from old single-map settings to new multi-map format
     const legacyResult = v.safeParse(LegacySettingsSchema, data);
     if (legacyResult.success) {
-      const { mapImagePath, layerFolder, defaultLayerFile } =
-        legacyResult.output;
+      const { mapImagePath } = legacyResult.output;
 
       this.settings = {
         maps: mapImagePath
@@ -96,8 +95,8 @@ export default class FantasyMapPlugin extends Plugin {
                     .pop()
                     ?.replace(/\.\w+$/, "") ?? "Map",
                 mapImagePath,
-                layerFolder,
-                defaultLayerFile,
+                layers: [],
+                defaultLayerId: "",
               },
             ]
           : [],

@@ -1,7 +1,12 @@
 import type * as L from "leaflet";
 import type * as v from "valibot";
-import type { MapConfigSchema, FantasyMapSettingsSchema } from "./schemas";
+import type {
+  MapConfigSchema,
+  FantasyMapSettingsSchema,
+  LayerConfigSchema,
+} from "./schemas";
 
+export type LayerConfig = v.InferOutput<typeof LayerConfigSchema>;
 export type MapConfig = v.InferOutput<typeof MapConfigSchema>;
 export type FantasyMapSettings = v.InferOutput<typeof FantasyMapSettingsSchema>;
 
@@ -33,8 +38,8 @@ export interface MapFeatureCollection {
 }
 
 export interface LoadedLayer {
+  config: LayerConfig;
   filePath: string;
-  fileName: string;
   data: MapFeatureCollection;
   leafletLayer: L.GeoJSON | null;
 }

@@ -8,7 +8,7 @@ import type {
   MapFeature,
   MarkerProperties,
 } from "./types";
-import { loadAllLayers, ensureLayerFolder } from "./layers";
+import { loadConfiguredLayers } from "./layers";
 import { createMarkerFromFeature, fixLeafletDefaultIcons } from "./markers";
 import { MarkerModal, DeleteConfirmModal } from "./modals";
 import { MAP_CONFIG, GEOMAN_CONFIG } from "./config";
@@ -22,6 +22,7 @@ export class FantasyMapView extends ItemView {
   mapContainerEl: HTMLDivElement | null = null;
   mapId: string | null = null;
   private blobUrl: string | null = null;
+  private layerControl: L.Control.Layers | null = null;
 
   constructor(leaf: WorkspaceLeaf, plugin: FantasyMapPlugin) {
     super(leaf);
@@ -118,6 +119,7 @@ export class FantasyMapView extends ItemView {
       this.blobUrl = null;
     }
     this.layers = [];
+    this.layerControl = null;
   }
 
   async onClose(): Promise<void> {
@@ -173,6 +175,9 @@ export class FantasyMapView extends ItemView {
     L.imageOverlay(imageUrl, bounds).addTo(this.map);
     this.map.fitBounds(bounds);
 
+    // Layer control for toggling overlay visibility
+    this.layerControl = L.control.layers({}, {}).addTo(this.map);
+
     // Initialize Geoman controls - only marker drawing enabled for now
     this.map.pm.addControls(GEOMAN_CONFIG);
 
@@ -200,14 +205,11 @@ export class FantasyMapView extends ItemView {
   private async loadAndDisplayLayers(config: MapConfig): Promise<void> {
     if (!this.map) return;
 
-    const { layerFolder } = config;
-    if (!layerFolder) {
-      new Notice("No layer folder configured. Set it in Fantasy Map settings.");
-      return;
-    }
-
-    await ensureLayerFolder(this.app.vault.adapter, layerFolder);
-    this.layers = await loadAllLayers(this.app.vault.adapter, layerFolder);
+    this.layers = await loadConfiguredLayers(
+      this.app.vault.adapter,
+      config.id,
+      config.layers,
+    );
 
     for (const layer of this.layers) {
       this.addLayerToMap(layer);
@@ -230,6 +232,7 @@ export class FantasyMapView extends ItemView {
       },
     );
     leafletLayer.addTo(this.map);
+    this.layerControl?.addOverlay(leafletLayer, layer.config.name);
     layer.leafletLayer = leafletLayer;
   }
 
@@ -328,27 +331,27 @@ export class FantasyMapView extends ItemView {
 
   private openAddMarkerModal(latlng: L.LatLng): void {
     const config = this.getMapConfig();
-    const layerNames = this.layers.map((l) => l.fileName);
-    let defaultLayer = "";
-    if (config?.defaultLayerFile) {
-      defaultLayer = config.defaultLayerFile;
-    } else if (layerNames.length > 0) {
-      defaultLayer = layerNames[0];
+    const layerOptions = this.layers.map((l) => ({
+      id: l.config.id,
+      name: l.config.name,
+    }));
+
+    if (layerOptions.length === 0) {
+      new Notice("No layers configured. Add a layer in Fantasy Map settings.");
+      return;
     }
 
-    if (layerNames.length === 0) {
-      new Notice(
-        "No layer files found. Create a .geojson file in your layer folder first.",
-      );
-      return;
+    let defaultLayerId = config?.defaultLayerId ?? "";
+    if (!defaultLayerId && layerOptions.length > 0) {
+      defaultLayerId = layerOptions[0].id;
     }
 
     const modal = new MarkerModal(
       this.app,
       null,
-      layerNames,
-      defaultLayer,
-      (properties: MarkerProperties, selectedLayer: string) => {
+      layerOptions,
+      defaultLayerId,
+      (properties: MarkerProperties, selectedLayerId: string) => {
         const feature: MapFeature = {
           type: "Feature",
           geometry: {
@@ -358,9 +361,9 @@ export class FantasyMapView extends ItemView {
           properties,
         };
 
-        const layer = this.layers.find((l) => l.fileName === selectedLayer);
+        const layer = this.layers.find((l) => l.config.id === selectedLayerId);
         if (!layer) {
-          new Notice(`Layer not found: ${selectedLayer}`);
+          new Notice(`Layer not found`);
           return;
         }
 
@@ -380,13 +383,16 @@ export class FantasyMapView extends ItemView {
   // --- Edit Marker ---
 
   private editMarker(properties: MarkerProperties, layer: LoadedLayer): void {
-    const layerNames = this.layers.map((l) => l.fileName);
+    const layerOptions = this.layers.map((l) => ({
+      id: l.config.id,
+      name: l.config.name,
+    }));
 
     const modal = new MarkerModal(
       this.app,
       properties,
-      layerNames,
-      layer.fileName,
+      layerOptions,
+      layer.config.id,
       (updatedProperties: MarkerProperties) => {
         const featureIndex = layer.data.features.findIndex(
           (f) => f.properties.id === properties.id,
@@ -417,11 +423,8 @@ export class FantasyMapView extends ItemView {
   // --- Utilities ---
 
   private async saveLayer(layer: LoadedLayer): Promise<void> {
-    const config = this.getMapConfig();
-    if (!config) return;
-    const filePath = `${config.layerFolder}/${layer.fileName}`;
     const json = JSON.stringify(layer.data, null, 2);
-    await this.app.vault.adapter.write(filePath, json);
+    await this.app.vault.adapter.write(layer.filePath, json);
   }
 
   private refreshMapLayers(): void {
@@ -429,9 +432,9 @@ export class FantasyMapView extends ItemView {
 
     for (const layer of this.layers) {
       if (layer.leafletLayer) {
-        layer.leafletLayer.remove();
+        layer.leafletLayer.clearLayers();
+        layer.leafletLayer.addData(layer.data);
       }
-      this.addLayerToMap(layer);
     }
   }
 }

@@ -1,6 +1,7 @@
 import { App, PluginSettingTab, Setting } from "obsidian";
 import type FantasyMapPlugin from "./main";
-import type { MapConfig } from "./types";
+import type { MapConfig, LayerConfig } from "./types";
+import { deleteLayerFile } from "./layers";
 
 export class FantasyMapSettingTab extends PluginSettingTab {
   plugin: FantasyMapPlugin;
@@ -29,8 +30,8 @@ export class FantasyMapSettingTab extends PluginSettingTab {
             id: crypto.randomUUID(),
             name: "",
             mapImagePath: "",
-            layerFolder: "",
-            defaultLayerFile: "",
+            layers: [],
+            defaultLayerId: "",
           };
           this.plugin.settings.maps.push(newMap);
           void this.plugin.saveSettings();
@@ -85,32 +86,69 @@ export class FantasyMapSettingTab extends PluginSettingTab {
           }),
       );
 
-    new Setting(section)
-      .setName("Layer folder")
-      .setDesc(
-        "Vault folder containing .geojson layer files (e.g. maps/layers)",
-      )
-      .addText((text) =>
-        text
-          .setPlaceholder("Maps/layers")
-          .setValue(mapConfig.layerFolder)
-          .onChange(async (value) => {
-            mapConfig.layerFolder = value;
-            await this.plugin.saveSettings();
-          }),
-      );
+    new Setting(section).setName("Layers").setHeading();
 
-    new Setting(section)
-      .setName("Default layer")
-      .setDesc("Filename of the default layer for new markers")
-      .addText((text) =>
-        text
-          .setPlaceholder("cities.geojson")
-          .setValue(mapConfig.defaultLayerFile)
-          .onChange(async (value) => {
-            mapConfig.defaultLayerFile = value;
+    for (const layerConfig of mapConfig.layers) {
+      new Setting(section)
+        .addText((text) =>
+          text
+            .setPlaceholder("Layer name")
+            .setValue(layerConfig.name)
+            .onChange(async (value) => {
+              layerConfig.name = value;
+              await this.plugin.saveSettings();
+            }),
+        )
+        .addButton((btn) =>
+          btn
+            .setButtonText("Remove")
+            .setWarning()
+            .onClick(() => {
+              void deleteLayerFile(
+                this.plugin.app.vault.adapter,
+                mapConfig.id,
+                layerConfig.id,
+              ).then(() => {
+                mapConfig.layers = mapConfig.layers.filter(
+                  (l) => l.id !== layerConfig.id,
+                );
+                if (mapConfig.defaultLayerId === layerConfig.id) {
+                  mapConfig.defaultLayerId = "";
+                }
+                void this.plugin.saveSettings();
+                this.display();
+              });
+            }),
+        );
+    }
+
+    new Setting(section).addButton((btn) =>
+      btn.setButtonText("Add layer").onClick(() => {
+        const newLayer: LayerConfig = {
+          id: crypto.randomUUID(),
+          name: "New Layer",
+        };
+        mapConfig.layers.push(newLayer);
+        void this.plugin.saveSettings();
+        this.display();
+      }),
+    );
+
+    if (mapConfig.layers.length > 0) {
+      new Setting(section)
+        .setName("Default layer")
+        .setDesc("Layer used by default when adding new markers")
+        .addDropdown((dropdown) => {
+          dropdown.addOption("", "— none —");
+          for (const layer of mapConfig.layers) {
+            dropdown.addOption(layer.id, layer.name);
+          }
+          dropdown.setValue(mapConfig.defaultLayerId);
+          dropdown.onChange(async (value) => {
+            mapConfig.defaultLayerId = value;
             await this.plugin.saveSettings();
-          }),
-      );
+          });
+        });
+    }
   }
 }

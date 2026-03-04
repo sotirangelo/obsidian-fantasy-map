@@ -11,17 +11,17 @@ import { DEFAULT_MARKER_COLOR } from "./config";
 
 export class MarkerModal extends Modal {
   private properties: MarkerProperties;
-  private layerNames: string[];
-  private selectedLayer: string;
-  private onSubmit: (properties: MarkerProperties, layer: string) => void;
+  private layerOptions: { id: string; name: string }[];
+  private selectedLayerId: string;
+  private onSubmit: (properties: MarkerProperties, layerId: string) => void;
   private isEdit: boolean;
 
   constructor(
     app: App,
     existingProperties: MarkerProperties | null,
-    layerNames: string[],
-    defaultLayer: string,
-    onSubmit: (properties: MarkerProperties, layer: string) => void,
+    layerOptions: { id: string; name: string }[],
+    defaultLayerId: string,
+    onSubmit: (properties: MarkerProperties, layerId: string) => void,
   ) {
     super(app);
     this.isEdit = existingProperties !== null;
@@ -35,8 +35,8 @@ export class MarkerModal extends Modal {
           color: DEFAULT_MARKER_COLOR,
           description: "",
         };
-    this.layerNames = layerNames;
-    this.selectedLayer = defaultLayer;
+    this.layerOptions = layerOptions;
+    this.selectedLayerId = defaultLayerId || (layerOptions[0]?.id ?? "");
     this.onSubmit = onSubmit;
   }
 
@@ -105,17 +105,17 @@ export class MarkerModal extends Modal {
           }),
       );
 
-    if (!this.isEdit && this.layerNames.length > 0) {
+    if (!this.isEdit && this.layerOptions.length > 0) {
       new Setting(contentEl)
         .setName("Layer")
         .setDesc("Which layer to add this marker to")
         .addDropdown((dropdown) => {
-          for (const name of this.layerNames) {
-            dropdown.addOption(name, name);
+          for (const opt of this.layerOptions) {
+            dropdown.addOption(opt.id, opt.name);
           }
-          dropdown.setValue(this.selectedLayer);
+          dropdown.setValue(this.selectedLayerId);
           dropdown.onChange((value) => {
-            this.selectedLayer = value;
+            this.selectedLayerId = value;
           });
         });
     }
@@ -130,7 +130,7 @@ export class MarkerModal extends Modal {
             return;
           }
           this.close();
-          this.onSubmit(this.properties, this.selectedLayer);
+          this.onSubmit(this.properties, this.selectedLayerId);
         }),
     );
   }
@@ -165,11 +165,7 @@ export class MapPickerModal extends FuzzySuggestModal<MapConfig> {
   private maps: MapConfig[];
   private onChooseCallback: (map: MapConfig) => void;
 
-  constructor(
-    app: App,
-    maps: MapConfig[],
-    onChoose: (map: MapConfig) => void,
-  ) {
+  constructor(app: App, maps: MapConfig[], onChoose: (map: MapConfig) => void) {
     super(app);
     this.maps = maps;
     this.onChooseCallback = onChoose;

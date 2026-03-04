@@ -1,11 +1,16 @@
 import * as v from "valibot";
 
+export const LayerConfigSchema = v.object({
+  id: v.string(),
+  name: v.string(),
+});
+
 export const MapConfigSchema = v.object({
   id: v.string(),
   name: v.string(),
   mapImagePath: v.string(),
-  layerFolder: v.string(),
-  defaultLayerFile: v.string(),
+  layers: v.optional(v.array(LayerConfigSchema), []),
+  defaultLayerId: v.optional(v.string(), ""),
 });
 
 export const FantasyMapSettingsSchema = v.object({

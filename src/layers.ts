@@ -1,7 +1,12 @@
 import type { DataAdapter } from "obsidian";
-import type { MapFeatureCollection, LoadedLayer } from "./types";
+import type { MapFeatureCollection, LoadedLayer, LayerConfig } from "./types";
+import { LAYERS_BASE_FOLDER } from "./config";
 
-export async function ensureLayerFolder(
+export function getLayerFilePath(mapId: string, layerId: string): string {
+  return `${LAYERS_BASE_FOLDER}/${mapId}/${layerId}.geojson`;
+}
+
+async function ensureFolder(
   adapter: DataAdapter,
   folderPath: string,
 ): Promise<void> {
@@ -11,32 +16,38 @@ export async function ensureLayerFolder(
   }
 }
 
-export async function loadAllLayers(
+export async function loadConfiguredLayers(
   adapter: DataAdapter,
-  folderPath: string,
+  mapId: string,
+  layerConfigs: LayerConfig[],
 ): Promise<LoadedLayer[]> {
-  const layers: LoadedLayer[] = [];
-  const listing = await adapter.list(folderPath);
+  await ensureFolder(adapter, LAYERS_BASE_FOLDER);
+  await ensureFolder(adapter, `${LAYERS_BASE_FOLDER}/${mapId}`);
 
-  for (const filePath of listing.files) {
-    if (!filePath.endsWith(".geojson")) continue;
+  const layers: LoadedLayer[] = [];
+
+  for (const config of layerConfigs) {
+    const filePath = getLayerFilePath(mapId, config.id);
 
     try {
-      const content = await adapter.read(filePath);
-      const data = JSON.parse(content) as MapFeatureCollection;
+      const exists = await adapter.exists(filePath);
+      let data: MapFeatureCollection;
 
-      if (!Array.isArray(data.features)) {
-        console.warn(`Fantasy Map: Invalid GeoJSON in ${filePath}, skipping`);
-        continue;
+      if (!exists) {
+        data = { type: "FeatureCollection", features: [] };
+        await adapter.write(filePath, JSON.stringify(data, null, 2));
+      } else {
+        const content = await adapter.read(filePath);
+        data = JSON.parse(content) as MapFeatureCollection;
+        if (!Array.isArray(data.features)) {
+          console.warn(
+            `Fantasy Map: Invalid GeoJSON in ${filePath}, using empty collection`,
+          );
+          data = { type: "FeatureCollection", features: [] };
+        }
       }
 
-      const fileName = filePath.split("/").pop() ?? filePath;
-      layers.push({
-        filePath,
-        fileName,
-        data,
-        leafletLayer: null,
-      });
+      layers.push({ config, filePath, data, leafletLayer: null });
     } catch (error) {
       console.warn(`Fantasy Map: Failed to load layer ${filePath}:`, error);
     }
@@ -45,15 +56,14 @@ export async function loadAllLayers(
   return layers;
 }
 
-export async function createNewLayer(
+export async function deleteLayerFile(
   adapter: DataAdapter,
-  filePath: string,
-): Promise<MapFeatureCollection> {
-  const emptyCollection: MapFeatureCollection = {
-    type: "FeatureCollection",
-    features: [],
-  };
-  const json = JSON.stringify(emptyCollection, null, 2);
-  await adapter.write(filePath, json);
-  return emptyCollection;
+  mapId: string,
+  layerId: string,
+): Promise<void> {
+  const filePath = getLayerFilePath(mapId, layerId);
+  const exists = await adapter.exists(filePath);
+  if (exists) {
+    await adapter.remove(filePath);
+  }
 }
