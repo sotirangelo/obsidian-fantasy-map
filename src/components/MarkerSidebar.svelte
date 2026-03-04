@@ -1,11 +1,14 @@
 <script lang="ts">
-  import type { MarkerProperties } from "../types";
+  import type { MarkerProperties, PolygonProperties } from "../types";
 
   interface SidebarState {
-    properties: MarkerProperties;
+    featureType: "marker" | "polygon";
+    properties: MarkerProperties | PolygonProperties;
     onOpenNote: (path: string) => void;
     onEdit: () => void;
     onDelete: () => void;
+    onOpenLocalMap?: () => void;
+    onLinkLocalMap?: () => void;
   }
 
   interface Props {
@@ -20,15 +23,20 @@
       selected = state;
     });
   });
+
+  function getIcon(state: SidebarState): string {
+    if (state.featureType === "marker") {
+      return (state.properties as MarkerProperties).icon ?? "";
+    }
+    return "";
+  }
 </script>
 
 <div class="fantasy-map-sidebar-content">
   {#if selected}
     <div class="sidebar-marker">
       <h3 class="sidebar-marker-title">
-        {selected.properties.icon
-          ? `${selected.properties.icon} `
-          : ""}{selected.properties.name}
+        {#if getIcon(selected)}{getIcon(selected)}{" "}{/if}{selected.properties.name}
       </h3>
       {#if selected.properties.description}
         <p class="sidebar-marker-description">
@@ -43,10 +51,23 @@
           Open: {selected.properties.note}
         </button>
       {/if}
-      <div class="sidebar-buttons">
-        <button class="sidebar-btn" onclick={() => selected?.onEdit()}
-          >Edit</button
+      {#if selected.onOpenLocalMap}
+        <button
+          class="sidebar-btn sidebar-btn-local-map"
+          onclick={() => selected?.onOpenLocalMap?.()}
         >
+          Open Local Map
+        </button>
+      {:else if selected.onLinkLocalMap}
+        <button
+          class="sidebar-btn"
+          onclick={() => selected?.onLinkLocalMap?.()}
+        >
+          Link Local Map
+        </button>
+      {/if}
+      <div class="sidebar-buttons">
+        <button class="sidebar-btn" onclick={() => selected?.onEdit()}>Edit</button>
         <button
           class="sidebar-btn sidebar-btn-danger"
           onclick={() => selected?.onDelete()}>Delete</button

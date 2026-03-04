@@ -2,7 +2,7 @@ import { Notice, Plugin } from "obsidian";
 import * as v from "valibot";
 import { FantasyMapView, FANTASY_MAP_VIEW } from "./view";
 import { FantasyMapSettingTab } from "./settings";
-import { MapPickerModal } from "./modals";
+import { MapPickerModal, CreateMapModal } from "./modals";
 import { DEFAULT_SETTINGS } from "./types";
 import type { FantasyMapSettings } from "./types";
 import { FantasyMapSettingsSchema, LegacySettingsSchema } from "./schemas";
@@ -30,7 +30,32 @@ export default class FantasyMapPlugin extends Plugin {
       },
     });
 
+    this.addCommand({
+      id: "create-new-map",
+      name: "Create new map",
+      callback: () => {
+        this.openCreateMapModal();
+      },
+    });
+
     this.addSettingTab(new FantasyMapSettingTab(this.app, this));
+  }
+
+  private openCreateMapModal(): void {
+    new CreateMapModal(
+      this.app,
+      (name: string, imagePath: string) => {
+        const newMap = {
+          id: crypto.randomUUID(),
+          name,
+          mapImagePath: imagePath,
+          layers: [],
+          defaultLayerId: "",
+        };
+        this.settings.maps.push(newMap);
+        void this.saveSettings().then(() => this.openMap(newMap.id));
+      },
+    ).open();
   }
 
   private openMapPicker(): void {
@@ -38,7 +63,7 @@ export default class FantasyMapPlugin extends Plugin {
 
     if (maps.length === 0) {
       new Notice(
-        "No maps configured. Go to Settings > Fantasy Map to add a map.",
+        "No maps configured. Use the 'Create new map' command or go to Settings > Fantasy Map.",
       );
       return;
     }
@@ -48,7 +73,16 @@ export default class FantasyMapPlugin extends Plugin {
       return;
     }
 
-    new MapPickerModal(this.app, maps, (map) => {
+    // Build display list: local maps shown with parent context
+    const parentMap = new Map(maps.map((m) => [m.id, m.name || m.id]));
+    const displayMaps = maps.map((m) => ({
+      ...m,
+      displayName: m.parentMapId
+        ? `↳ ${m.name || m.id} (in ${parentMap.get(m.parentMapId) ?? m.parentMapId})`
+        : (m.name || m.id),
+    }));
+
+    new MapPickerModal(this.app, displayMaps, (map) => {
       void this.openMap(map.id);
     }).open();
   }

@@ -2,28 +2,45 @@ import { ItemView, WorkspaceLeaf, Menu, Notice } from "obsidian";
 import * as L from "leaflet";
 import "@geoman-io/leaflet-geoman-free";
 import { mount, unmount } from "svelte";
-import type { Point } from "geojson";
+import type { Polygon } from "geojson";
 import type FantasyMapPlugin from "./main";
 import type {
   LoadedLayer,
   MapConfig,
+  LayerConfig,
   MapFeature,
+  MarkerFeature,
+  PolygonFeature,
   MarkerProperties,
+  PolygonProperties,
 } from "./types";
 import { loadConfiguredLayers } from "./layers";
 import { createMarkerFromFeature, fixLeafletDefaultIcons } from "./markers";
-import { MarkerModal, DeleteConfirmModal } from "./modals";
+import {
+  MarkerModal,
+  DeleteConfirmModal,
+  PolygonModal,
+  SetScaleModal,
+  LinkLocalMapModal,
+  NameInputModal,
+} from "./modals";
 import { MAP_CONFIG, GEOMAN_CONFIG } from "./config";
+import { pixelDistance, pickNiceDistance } from "./scales";
 import MarkerSidebar from "./components/MarkerSidebar.svelte";
 
 interface SidebarState {
-  properties: MarkerProperties;
+  featureType: "marker" | "polygon";
+  properties: MarkerProperties | PolygonProperties;
   onOpenNote: (path: string) => void;
   onEdit: () => void;
   onDelete: () => void;
+  onOpenLocalMap?: () => void;
+  onLinkLocalMap?: () => void;
 }
 
 export const FANTASY_MAP_VIEW = "fantasy-map-view";
+
+type CalibrationMode = "off" | "point1" | "point2";
 
 export class FantasyMapView extends ItemView {
   plugin: FantasyMapPlugin;
@@ -36,6 +53,12 @@ export class FantasyMapView extends ItemView {
   private sidebarEl: HTMLDivElement | null = null;
   private sidebarComponent: ReturnType<typeof mount> | null = null;
   private updateSidebar: ((state: SidebarState | null) => void) | null = null;
+
+  // Scale calibration state
+  private calMode: CalibrationMode = "off";
+  private calPoint1: L.LatLng | null = null;
+  private calTempLayers: L.Layer[] = [];
+  private scaleBarControl: L.Control | null = null;
 
   constructor(leaf: WorkspaceLeaf, plugin: FantasyMapPlugin) {
     super(leaf);
@@ -83,7 +106,7 @@ export class FantasyMapView extends ItemView {
     const config = this.getMapConfig();
     if (!config) {
       container.createEl("p", {
-        text: "No map configured. Go to Settings > Fantasy Map to add a map.",
+        text: "No map configured. Use the 'Create new map' command or go to Settings > Fantasy Map.",
         cls: "fantasy-map-notice",
       });
       return;
@@ -115,7 +138,7 @@ export class FantasyMapView extends ItemView {
       const imageUrl = await this.getImageUrl(config.mapImagePath);
       this.blobUrl = imageUrl;
       const dimensions = await this.getImageDimensions(imageUrl);
-      this.initializeMap(imageUrl, dimensions);
+      this.initializeMap(imageUrl, dimensions, config);
       await this.loadAndDisplayLayers(config);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unknown error";
@@ -151,6 +174,10 @@ export class FantasyMapView extends ItemView {
     this.sidebarEl = null;
     this.layers = [];
     this.layerControl = null;
+    this.calMode = "off";
+    this.calPoint1 = null;
+    this.calTempLayers = [];
+    this.scaleBarControl = null;
   }
 
   async onClose(): Promise<void> {
@@ -190,6 +217,7 @@ export class FantasyMapView extends ItemView {
   private initializeMap(
     imageUrl: string,
     dimensions: { width: number; height: number },
+    config: MapConfig,
   ): void {
     if (!this.mapContainerEl) return;
 
@@ -213,31 +241,257 @@ export class FantasyMapView extends ItemView {
       .layers({}, {}, { position: "topright" })
       .addTo(this.map);
 
-    // Initialize Geoman controls - only marker drawing enabled for now
+    // Initialize Geoman controls
     this.map.pm.addControls(GEOMAN_CONFIG);
 
-    // When a marker is created via the Geoman toolbar
+    // Set Scale button
+    this.addSetScaleControl();
+
+    // Add Layer button
+    this.addAddLayerControl(config);
+
+    // Parent map navigation (for local maps)
+    this.renderParentNavigation(config);
+
+    // Scale bar (if scale already configured)
+    if (config.scale) {
+      this.renderScaleBar(config);
+    }
+
+    // When a shape is created via the Geoman toolbar
     this.map.on("pm:create", (e: { shape: string; layer: L.Layer }) => {
       if (e.shape === "Marker") {
         const marker = e.layer as L.Marker;
         const latlng = marker.getLatLng();
-
-        // Remove the temporary Geoman marker - we'll create our own
         this.map?.removeLayer(marker);
-
         this.openAddMarkerModal(latlng);
+      } else if (e.shape === "Polygon" || e.shape === "Rectangle") {
+        const polygon = e.layer as L.Polygon;
+        this.map?.removeLayer(polygon);
+        this.openAddPolygonModal(polygon);
       }
     });
 
-    // Click on map background deselects the current marker
-    this.map.on("click", () => {
-      this.selectMarker(null);
+    // Click on map background deselects the current feature
+    // Also handles calibration point clicks
+    this.map.on("click", (e: L.LeafletMouseEvent) => {
+      if (this.calMode !== "off") {
+        this.handleCalibrationClick(e.latlng);
+        return;
+      }
+      this.selectFeature(null);
     });
 
-    // Also support right-click to add a marker
+    // Right-click to add a marker
     this.map.on("contextmenu", (e: L.LeafletMouseEvent) => {
+      if (this.calMode !== "off") return;
       this.showAddMarkerMenu(e);
     });
+  }
+
+  // --- Scale Calibration ---
+
+  private addSetScaleControl(): void {
+    if (!this.map) return;
+
+    const SetScaleControl = L.Control.extend({
+      onAdd: () => {
+        const btn = L.DomUtil.create(
+          "button",
+          "leaflet-bar fantasy-map-scale-btn",
+        );
+        btn.textContent = "Set Scale";
+        btn.title = "Calibrate map scale";
+        L.DomEvent.on(btn, "click", (e) => {
+          L.DomEvent.stopPropagation(e);
+          this.startCalibration();
+        });
+        return btn;
+      },
+    });
+
+    new SetScaleControl({ position: "topleft" }).addTo(this.map);
+  }
+
+  private addAddLayerControl(config: MapConfig): void {
+    if (!this.map) return;
+
+    const AddLayerControl = L.Control.extend({
+      onAdd: () => {
+        const btn = L.DomUtil.create(
+          "button",
+          "leaflet-bar fantasy-map-add-layer-btn",
+        );
+        btn.textContent = "Add Layer";
+        btn.title = "Add a new layer to this map";
+        L.DomEvent.on(btn, "click", (e) => {
+          L.DomEvent.stopPropagation(e);
+          this.promptAddLayer(config);
+        });
+        return btn;
+      },
+    });
+
+    new AddLayerControl({ position: "topleft" }).addTo(this.map);
+  }
+
+  private promptAddLayer(config: MapConfig): void {
+    const defaultName = config.name ? `${config.name} Layer` : "New Layer";
+    new NameInputModal(this.app, defaultName, (name) => {
+      void this.createLayer(config, name);
+    }).open();
+  }
+
+  private async createLayer(config: MapConfig, name: string): Promise<void> {
+    const newLayerConfig: LayerConfig = {
+      id: crypto.randomUUID(),
+      name,
+    };
+
+    config.layers.push(newLayerConfig);
+    await this.plugin.saveSettings();
+
+    const loaded = await loadConfiguredLayers(
+      this.app.vault.adapter,
+      config.id,
+      [newLayerConfig],
+    );
+
+    for (const layer of loaded) {
+      this.layers.push(layer);
+      this.addLayerToMap(layer);
+    }
+
+    new Notice(`Layer "${name}" added`);
+  }
+
+  private startCalibration(): void {
+    if (!this.map) return;
+    this.calMode = "point1";
+    this.clearCalTempLayers();
+    this.map.getContainer().classList.add("is-calibrating");
+    new Notice("Click the first calibration point on the map");
+  }
+
+  private handleCalibrationClick(latlng: L.LatLng): void {
+    if (!this.map) return;
+
+    if (this.calMode === "point1") {
+      this.calPoint1 = latlng;
+      const circle = L.circleMarker(latlng, {
+        radius: 6,
+        color: "#e74c3c",
+        fillColor: "#e74c3c",
+        fillOpacity: 1,
+      }).addTo(this.map);
+      this.calTempLayers.push(circle);
+      this.calMode = "point2";
+      new Notice("Click the second calibration point on the map");
+    } else if (this.calMode === "point2" && this.calPoint1) {
+      const p1 = this.calPoint1;
+      const circle2 = L.circleMarker(latlng, {
+        radius: 6,
+        color: "#e74c3c",
+        fillColor: "#e74c3c",
+        fillOpacity: 1,
+      }).addTo(this.map);
+      this.calTempLayers.push(circle2);
+
+      const line = L.polyline([p1, latlng], {
+        color: "#e74c3c",
+        dashArray: "6,4",
+      }).addTo(this.map);
+      this.calTempLayers.push(line);
+
+      this.calMode = "off";
+      this.map.getContainer().classList.remove("is-calibrating");
+
+      const pxDist = pixelDistance([p1.lat, p1.lng], [latlng.lat, latlng.lng]);
+
+      new SetScaleModal(this.app, (realDistance, unit) => {
+        this.clearCalTempLayers();
+
+        const config = this.getMapConfig();
+        if (!config) return;
+
+        config.scale = {
+          point1: [p1.lat, p1.lng],
+          point2: [latlng.lat, latlng.lng],
+          pixelDistance: pxDist,
+          realDistance,
+          unit,
+        };
+
+        void this.plugin.saveSettings().then(() => {
+          this.renderScaleBar(config);
+          new Notice(
+            `Scale set: ${realDistance.toString()} ${unit} between the two points`,
+          );
+        });
+      }).open();
+    }
+  }
+
+  private clearCalTempLayers(): void {
+    for (const layer of this.calTempLayers) {
+      this.map?.removeLayer(layer);
+    }
+    this.calTempLayers = [];
+  }
+
+  private renderScaleBar(config: MapConfig): void {
+    if (!this.map || !config.scale) return;
+
+    // Remove existing scale bar
+    if (this.scaleBarControl) {
+      this.scaleBarControl.remove();
+      this.scaleBarControl = null;
+    }
+
+    const scale = config.scale;
+    const { distance, barPixels } = pickNiceDistance(scale, 200);
+
+    const ScaleBarControl = L.Control.extend({
+      onAdd: () => {
+        const div = L.DomUtil.create("div", "fantasy-map-scale-bar");
+        // eslint-disable-next-line @microsoft/sdl/no-inner-html
+        div.innerHTML = `<div class="scale-bar-line" style="width:${Math.round(barPixels).toString()}px"></div><div class="scale-bar-label">${distance.toString()} ${scale.unit}</div>`;
+        return div;
+      },
+    });
+
+    this.scaleBarControl = new ScaleBarControl({
+      position: "bottomleft",
+    }).addTo(this.map);
+  }
+
+  // --- Parent Navigation (Local Maps) ---
+
+  private renderParentNavigation(config: MapConfig): void {
+    if (!this.map || !config.parentMapId) return;
+
+    const parentConfig = this.plugin.settings.maps.find(
+      (m) => m.id === config.parentMapId,
+    );
+    const parentName = parentConfig?.name ?? "Parent Map";
+
+    const BackControl = L.Control.extend({
+      onAdd: () => {
+        const btn = L.DomUtil.create(
+          "button",
+          "leaflet-bar fantasy-map-back-btn",
+        );
+        btn.textContent = `↩ ${parentName}`;
+        btn.title = `Back to ${parentName}`;
+        L.DomEvent.on(btn, "click", (e) => {
+          L.DomEvent.stopPropagation(e);
+          void this.plugin.openMap(config.parentMapId!);
+        });
+        return btn;
+      },
+    });
+
+    new BackControl({ position: "topleft" }).addTo(this.map);
   }
 
   // --- Layer Management ---
@@ -259,9 +513,37 @@ export class FantasyMapView extends ItemView {
   private addLayerToMap(layer: LoadedLayer): void {
     if (!this.map) return;
 
-    const leafletLayer = L.geoJSON<MarkerProperties, Point>(layer.data, {
-      pointToLayer: (_feature, latlng) => {
-        return this.createInteractiveMarker(_feature, latlng, layer);
+    const leafletLayer = L.geoJSON(layer.data, {
+      pointToLayer: (feature, latlng) => {
+        return this.createInteractiveMarker(
+          feature as MarkerFeature,
+          latlng,
+          layer,
+        );
+      },
+      style: (feature) => {
+        if (feature?.geometry.type === "Polygon") {
+          const props = feature.properties as PolygonProperties;
+          return {
+            color: props.color,
+            fillColor: props.color,
+            fillOpacity: 0.3,
+            weight: 2,
+          };
+        }
+        return {};
+      },
+      onEachFeature: (feature, leafletFeature) => {
+        if (
+          feature.geometry.type === "Polygon" ||
+          feature.geometry.type === "MultiPolygon"
+        ) {
+          this.attachPolygonInteraction(
+            feature as PolygonFeature,
+            leafletFeature as L.Polygon,
+            layer,
+          );
+        }
       },
     });
     leafletLayer.addTo(this.map);
@@ -270,28 +552,38 @@ export class FantasyMapView extends ItemView {
   }
 
   private createInteractiveMarker(
-    feature: MapFeature,
+    feature: MarkerFeature,
     latlng: L.LatLng,
     layer: LoadedLayer,
   ): L.Marker {
     const marker = createMarkerFromFeature(feature, latlng);
 
     marker.on("click", () => {
-      this.selectMarker({
-        properties: feature.properties,
+      const props = feature.properties;
+      this.selectFeature({
+        featureType: "marker",
+        properties: props,
         onOpenNote: (path: string) => {
           void this.app.workspace.openLinkText(path, "", false);
         },
         onEdit: () => {
-          this.editMarker(feature.properties, layer);
+          this.editMarker(props, layer);
         },
         onDelete: () => {
-          this.deleteMarker(feature.properties, layer);
+          this.deleteFeature(props, layer);
         },
+        onOpenLocalMap: () =>
+          props.localMapId
+            ? void this.plugin.openMap(props.localMapId)
+            : undefined,
+        onLinkLocalMap: !props.localMapId
+          ? () => {
+              this.openLinkLocalMapModal(feature as MapFeature, layer);
+            }
+          : undefined,
       });
     });
 
-    // Save coordinates on drag end
     marker.on("dragend", () => {
       const newLatLng = marker.getLatLng();
       feature.geometry.coordinates = [newLatLng.lng, newLatLng.lat];
@@ -299,6 +591,40 @@ export class FantasyMapView extends ItemView {
     });
 
     return marker;
+  }
+
+  private attachPolygonInteraction(
+    feature: PolygonFeature,
+    leafletPolygon: L.Polygon,
+    layer: LoadedLayer,
+  ): void {
+    leafletPolygon.on("click", (e: L.LeafletMouseEvent) => {
+      L.DomEvent.stopPropagation(e);
+      const props = feature.properties;
+      this.selectFeature({
+        featureType: "polygon",
+        properties: props,
+        onOpenNote: (path: string) => {
+          void this.app.workspace.openLinkText(path, "", false);
+        },
+        onEdit: () => {
+          this.editPolygon(props, layer);
+        },
+        onDelete: () => {
+          this.deleteFeature(props, layer);
+        },
+        onOpenLocalMap: () =>
+          props.localMapId
+            ? void this.plugin.openMap(props.localMapId)
+            : undefined,
+
+        onLinkLocalMap: !props.localMapId
+          ? () => {
+              this.openLinkLocalMapModal(feature as MapFeature, layer);
+            }
+          : undefined,
+      });
+    });
   }
 
   // --- Add Marker ---
@@ -326,7 +652,9 @@ export class FantasyMapView extends ItemView {
     }));
 
     if (layerOptions.length === 0) {
-      new Notice("No layers configured. Add a layer in Fantasy Map settings.");
+      new Notice(
+        "No layers configured. Use the 'Add Layer' button on the map.",
+      );
       return;
     }
 
@@ -341,7 +669,7 @@ export class FantasyMapView extends ItemView {
       layerOptions,
       defaultLayerId,
       (properties: MarkerProperties, selectedLayerId: string) => {
-        const feature: MapFeature = {
+        const feature: MarkerFeature = {
           type: "Feature",
           geometry: {
             type: "Point",
@@ -352,19 +680,89 @@ export class FantasyMapView extends ItemView {
 
         const layer = this.layers.find((l) => l.config.id === selectedLayerId);
         if (!layer) {
-          new Notice(`Layer not found`);
+          new Notice("Layer not found");
           return;
         }
 
         layer.data.features.push(feature);
         void this.saveLayer(layer);
 
-        // Add the marker to the existing Leaflet layer
         if (layer.leafletLayer && this.map) {
           const marker = this.createInteractiveMarker(feature, latlng, layer);
           layer.leafletLayer.addLayer(marker);
         }
       },
+      this.mapId
+        ? (featureId, cb) => this.openLinkLocalMapForNew(featureId, cb)
+        : undefined,
+    );
+    modal.open();
+  }
+
+  // --- Add Polygon ---
+
+  private openAddPolygonModal(polygon: L.Polygon): void {
+    const config = this.getMapConfig();
+    const layerOptions = this.layers.map((l) => ({
+      id: l.config.id,
+      name: l.config.name,
+    }));
+
+    if (layerOptions.length === 0) {
+      new Notice(
+        "No layers configured. Use the 'Add Layer' button on the map.",
+      );
+      return;
+    }
+
+    let defaultLayerId = config?.defaultLayerId ?? "";
+    if (!defaultLayerId && layerOptions.length > 0) {
+      defaultLayerId = layerOptions[0].id;
+    }
+
+    const modal = new PolygonModal(
+      this.app,
+      null,
+      layerOptions,
+      defaultLayerId,
+      (properties: PolygonProperties, selectedLayerId: string) => {
+        const latLngs = polygon.getLatLngs() as L.LatLng[][];
+        const coordinates: [number, number][][] = latLngs.map((ring) =>
+          ring.map((ll) => [ll.lng, ll.lat] as [number, number]),
+        );
+        // Close the ring if not already closed
+        for (const ring of coordinates) {
+          if (
+            ring.length > 0 &&
+            (ring[0][0] !== ring[ring.length - 1][0] ||
+              ring[0][1] !== ring[ring.length - 1][1])
+          ) {
+            ring.push(ring[0]);
+          }
+        }
+
+        const feature: PolygonFeature = {
+          type: "Feature",
+          geometry: {
+            type: "Polygon",
+            coordinates,
+          } as Polygon,
+          properties,
+        };
+
+        const layer = this.layers.find((l) => l.config.id === selectedLayerId);
+        if (!layer) {
+          new Notice("Layer not found");
+          return;
+        }
+
+        layer.data.features.push(feature);
+        void this.saveLayer(layer);
+        this.refreshMapLayers();
+      },
+      this.mapId
+        ? (featureId, cb) => this.openLinkLocalMapForNew(featureId, cb)
+        : undefined,
     );
     modal.open();
   }
@@ -384,7 +782,7 @@ export class FantasyMapView extends ItemView {
       layer.config.id,
       (updatedProperties: MarkerProperties) => {
         const featureIndex = layer.data.features.findIndex(
-          (f) => f.properties.id === properties.id,
+          (f) => (f.properties as MarkerProperties).id === properties.id,
         );
         if (featureIndex >= 0) {
           layer.data.features[featureIndex].properties = updatedProperties;
@@ -396,12 +794,42 @@ export class FantasyMapView extends ItemView {
     modal.open();
   }
 
-  // --- Delete Marker ---
+  // --- Edit Polygon ---
 
-  private deleteMarker(properties: MarkerProperties, layer: LoadedLayer): void {
+  private editPolygon(properties: PolygonProperties, layer: LoadedLayer): void {
+    const layerOptions = this.layers.map((l) => ({
+      id: l.config.id,
+      name: l.config.name,
+    }));
+
+    const modal = new PolygonModal(
+      this.app,
+      properties,
+      layerOptions,
+      layer.config.id,
+      (updatedProperties: PolygonProperties) => {
+        const featureIndex = layer.data.features.findIndex(
+          (f) => (f.properties as PolygonProperties).id === properties.id,
+        );
+        if (featureIndex >= 0) {
+          layer.data.features[featureIndex].properties = updatedProperties;
+          void this.saveLayer(layer);
+          this.refreshMapLayers();
+        }
+      },
+    );
+    modal.open();
+  }
+
+  // --- Delete Feature ---
+
+  private deleteFeature(
+    properties: MarkerProperties | PolygonProperties,
+    layer: LoadedLayer,
+  ): void {
     const modal = new DeleteConfirmModal(this.app, properties.name, () => {
       layer.data.features = layer.data.features.filter(
-        (f) => f.properties.id !== properties.id,
+        (f) => (f.properties as { id: string }).id !== properties.id,
       );
       void this.saveLayer(layer);
       this.refreshMapLayers();
@@ -409,9 +837,97 @@ export class FantasyMapView extends ItemView {
     modal.open();
   }
 
+  // --- Link Local Map ---
+
+  private openLinkLocalMapForNew(
+    featureId: string,
+    cb: (mapId: string) => void,
+  ): void {
+    if (!this.mapId) return;
+    const modal = new LinkLocalMapModal(
+      this.app,
+      this.mapId,
+      featureId,
+      this.plugin.settings.maps,
+      (mapId, isNew, name, imagePath) => {
+        if (isNew && name && imagePath) {
+          this.plugin.settings.maps.push({
+            id: mapId,
+            name,
+            mapImagePath: imagePath,
+            layers: [],
+            defaultLayerId: "",
+            parentMapId: this.mapId ?? undefined,
+            parentFeatureId: featureId,
+          });
+        } else if (!isNew) {
+          const target = this.plugin.settings.maps.find((m) => m.id === mapId);
+          if (target) {
+            target.parentMapId = this.mapId ?? undefined;
+            target.parentFeatureId = featureId;
+          }
+        }
+        void this.plugin.saveSettings();
+        cb(mapId);
+      },
+    );
+    modal.open();
+  }
+
+  private openLinkLocalMapModal(feature: MapFeature, layer: LoadedLayer): void {
+    if (!this.mapId) return;
+
+    const modal = new LinkLocalMapModal(
+      this.app,
+      this.mapId,
+      (feature.properties as { id: string }).id,
+      this.plugin.settings.maps,
+      (mapId, isNew, name, imagePath) => {
+        if (isNew && name && imagePath) {
+          const newMap = {
+            id: mapId,
+            name,
+            mapImagePath: imagePath,
+            layers: [],
+            defaultLayerId: "",
+            parentMapId: this.mapId ?? undefined,
+            parentFeatureId: (feature.properties as { id: string }).id,
+          };
+          this.plugin.settings.maps.push(newMap);
+        } else if (!isNew) {
+          // Link existing map: set its parentMapId
+          const target = this.plugin.settings.maps.find((m) => m.id === mapId);
+          if (target) {
+            target.parentMapId = this.mapId ?? undefined;
+            target.parentFeatureId = (feature.properties as { id: string }).id;
+          }
+        }
+
+        // Update the feature's localMapId
+        const featureIndex = layer.data.features.findIndex(
+          (f) =>
+            (f.properties as { id: string }).id ===
+            (feature.properties as { id: string }).id,
+        );
+        if (featureIndex >= 0) {
+          (
+            layer.data.features[featureIndex].properties as {
+              localMapId?: string;
+            }
+          ).localMapId = mapId;
+        }
+
+        void this.plugin.saveSettings();
+        void this.saveLayer(layer);
+        this.refreshMapLayers();
+      },
+    );
+    modal.open();
+  }
+
   // --- Utilities ---
 
-  private selectMarker(state: SidebarState | null): void {
+  private selectFeature(state: SidebarState | null): void {
     this.updateSidebar?.(state);
     if (this.sidebarEl) {
       this.sidebarEl.classList.toggle("fantasy-map-sidebar--hidden", !state);
@@ -426,7 +942,7 @@ export class FantasyMapView extends ItemView {
   private refreshMapLayers(): void {
     if (!this.map) return;
 
-    this.selectMarker(null);
+    this.selectFeature(null);
 
     for (const layer of this.layers) {
       if (layer.leafletLayer) {

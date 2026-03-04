@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { FantasyMapSettings, MapConfig, LayerConfig } from "../types";
+  import type { FantasyMapSettings, MapConfig } from "../types";
 
   interface Props {
     settings: FantasyMapSettings;
@@ -8,33 +8,6 @@
   }
 
   let { settings, onSave, onDeleteLayer }: Props = $props();
-
-  function addMap() {
-    const newMap: MapConfig = {
-      id: crypto.randomUUID(),
-      name: "",
-      mapImagePath: "",
-      layers: [],
-      defaultLayerId: "",
-    };
-    settings.maps = [...settings.maps, newMap];
-    void onSave();
-  }
-
-  function removeMap(mapId: string) {
-    settings.maps = settings.maps.filter((m) => m.id !== mapId);
-    void onSave();
-  }
-
-  function addLayer(map: MapConfig) {
-    const newLayer: LayerConfig = {
-      id: crypto.randomUUID(),
-      name: "New Layer",
-    };
-    map.layers = [...map.layers, newLayer];
-    settings.maps = [...settings.maps];
-    void onSave();
-  }
 
   async function removeLayer(map: MapConfig, layerId: string) {
     await onDeleteLayer(map.id, layerId);
@@ -55,30 +28,6 @@
 
 {#each settings.maps as map (map.id)}
   <div class="fantasy-map-config-section">
-    <div class="setting-item">
-      <div class="setting-item-info">
-        <div class="setting-item-name">Map name</div>
-        <div class="setting-item-description">Display name for this map</div>
-      </div>
-      <div class="setting-item-control">
-        <input
-          type="text"
-          placeholder="World map"
-          value={map.name}
-          oninput={(e) => {
-            map.name = e.currentTarget.value;
-            void onSave();
-          }}
-        />
-        <button
-          class="mod-warning"
-          onclick={() => removeMap(map.id)}
-        >
-          Remove
-        </button>
-      </div>
-    </div>
-
     <div class="setting-item">
       <div class="setting-item-info">
         <div class="setting-item-name">Map image path</div>
@@ -127,12 +76,6 @@
       </div>
     {/each}
 
-    <div class="setting-item">
-      <div class="setting-item-control">
-        <button onclick={() => addLayer(map)}>Add layer</button>
-      </div>
-    </div>
-
     {#if map.layers.length > 0}
       <div class="setting-item">
         <div class="setting-item-info">
@@ -159,9 +102,3 @@
     {/if}
   </div>
 {/each}
-
-<div class="setting-item">
-  <div class="setting-item-control">
-    <button class="mod-cta" onclick={addMap}>Add map</button>
-  </div>
-</div>

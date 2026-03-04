@@ -1,15 +1,15 @@
 <script lang="ts">
   import { untrack } from "svelte";
-  import type { MarkerProperties } from "../types";
+  import type { PolygonProperties } from "../types";
 
   interface Props {
-    initialProperties: MarkerProperties;
+    initialProperties: PolygonProperties;
     layerOptions: { id: string; name: string }[];
     initialLayerId: string;
     isEdit: boolean;
     onBrowseNote: (cb: (path: string) => void) => void;
     onLinkLocalMap?: (cb: (mapId: string) => void) => void;
-    onSubmit: (properties: MarkerProperties, layerId: string) => void;
+    onSubmit: (properties: PolygonProperties, layerId: string) => void;
   }
 
   let {
@@ -24,7 +24,7 @@
 
   let name = $state(untrack(() => initialProperties.name));
   let note = $state(untrack(() => initialProperties.note));
-  let icon = $state(untrack(() => initialProperties.icon));
+  let color = $state(untrack(() => initialProperties.color));
   let description = $state(untrack(() => initialProperties.description));
   let localMapId = $state(untrack(() => initialProperties.localMapId ?? ""));
   let selectedLayerId = $state(untrack(() => initialLayerId));
@@ -32,7 +32,7 @@
 
   function handleSubmit() {
     if (!name.trim()) {
-      error = "Marker name is required";
+      error = "Region name is required";
       return;
     }
     error = "";
@@ -41,8 +41,7 @@
         id: initialProperties.id,
         name: name.trim(),
         note,
-        icon,
-        color: initialProperties.color,
+        color,
         description,
         localMapId: localMapId || undefined,
       },
@@ -63,17 +62,17 @@
   }
 </script>
 
-<h2>{isEdit ? "Edit Marker" : "Add Marker"}</h2>
+<h2>{isEdit ? "Edit Region" : "Add Region"}</h2>
 
 <div class="setting-item">
   <div class="setting-item-info">
     <div class="setting-item-name">Name</div>
-    <div class="setting-item-description">Display name for the marker</div>
+    <div class="setting-item-description">Display name for the region</div>
   </div>
   <div class="setting-item-control">
     <input
       type="text"
-      placeholder="Waterdeep"
+      placeholder="The Dark Forest"
       value={name}
       oninput={(e) => (name = e.currentTarget.value)}
     />
@@ -82,15 +81,27 @@
 
 <div class="setting-item">
   <div class="setting-item-info">
+    <div class="setting-item-name">Color</div>
+    <div class="setting-item-description">Fill color for the region</div>
+  </div>
+  <div class="setting-item-control">
+    <input
+      type="color"
+      value={color}
+      oninput={(e) => (color = e.currentTarget.value)}
+    />
+  </div>
+</div>
+
+<div class="setting-item">
+  <div class="setting-item-info">
     <div class="setting-item-name">Linked note</div>
-    <div class="setting-item-description">
-      Obsidian note to link (e.g. Cities/Waterdeep)
-    </div>
+    <div class="setting-item-description">Obsidian note to link</div>
   </div>
   <div class="setting-item-control">
     <input
       type="text"
-      placeholder="Cities/waterdeep"
+      placeholder="Regions/dark-forest"
       value={note}
       oninput={(e) => (note = e.currentTarget.value)}
     />
@@ -100,27 +111,12 @@
 
 <div class="setting-item">
   <div class="setting-item-info">
-    <div class="setting-item-name">Icon</div>
-    <div class="setting-item-description">Emoji or short text for the marker</div>
-  </div>
-  <div class="setting-item-control">
-    <input
-      type="text"
-      placeholder="🏰"
-      value={icon}
-      oninput={(e) => (icon = e.currentTarget.value)}
-    />
-  </div>
-</div>
-
-<div class="setting-item">
-  <div class="setting-item-info">
     <div class="setting-item-name">Description</div>
-    <div class="setting-item-description">Short description shown in the popup</div>
+    <div class="setting-item-description">Short description shown in the sidebar</div>
   </div>
   <div class="setting-item-control">
     <textarea
-      placeholder="A bustling port city on the sword coast"
+      placeholder="A dense, ancient forest..."
       value={description}
       oninput={(e) => (description = e.currentTarget.value)}
     ></textarea>
@@ -131,7 +127,7 @@
   <div class="setting-item">
     <div class="setting-item-info">
       <div class="setting-item-name">Local Map</div>
-      <div class="setting-item-description">Link a drill-down map to this marker</div>
+      <div class="setting-item-description">Link a drill-down map to this region</div>
     </div>
     <div class="setting-item-control">
       {#if localMapId}
@@ -148,9 +144,7 @@
   <div class="setting-item">
     <div class="setting-item-info">
       <div class="setting-item-name">Layer</div>
-      <div class="setting-item-description">
-        Which layer to add this marker to
-      </div>
+      <div class="setting-item-description">Which layer to add this region to</div>
     </div>
     <div class="setting-item-control">
       <select
@@ -172,7 +166,7 @@
 <div class="setting-item">
   <div class="setting-item-control">
     <button class="mod-cta" onclick={handleSubmit}>
-      {isEdit ? "Save" : "Add Marker"}
+      {isEdit ? "Save" : "Add Region"}
     </button>
   </div>
 </div>
