@@ -1,6 +1,7 @@
 import { ItemView, WorkspaceLeaf, Menu, Notice } from "obsidian";
 import * as L from "leaflet";
 import "@geoman-io/leaflet-geoman-free";
+import type { Point } from "geojson";
 import type FantasyMapPlugin from "./main";
 import type {
   LoadedLayer,
@@ -219,18 +220,11 @@ export class FantasyMapView extends ItemView {
   private addLayerToMap(layer: LoadedLayer): void {
     if (!this.map) return;
 
-    const leafletLayer = L.geoJSON(
-      layer.data as Parameters<typeof L.geoJSON>[0],
-      {
-        pointToLayer: (_feature, latlng: L.LatLng) => {
-          return this.createInteractiveMarker(
-            _feature as unknown as MapFeature,
-            latlng,
-            layer,
-          );
-        },
+    const leafletLayer = L.geoJSON<MarkerProperties, Point>(layer.data, {
+      pointToLayer: (_feature, latlng) => {
+        return this.createInteractiveMarker(_feature, latlng, layer);
       },
-    );
+    });
     leafletLayer.addTo(this.map);
     this.layerControl?.addOverlay(leafletLayer, layer.config.name);
     layer.leafletLayer = leafletLayer;

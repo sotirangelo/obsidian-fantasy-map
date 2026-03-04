@@ -1,5 +1,6 @@
 import type * as L from "leaflet";
 import type * as v from "valibot";
+import type { Feature, FeatureCollection, Point } from "geojson";
 import type {
   MapConfigSchema,
   FantasyMapSettingsSchema,
@@ -23,19 +24,8 @@ export interface MarkerProperties {
   description: string;
 }
 
-export interface MapFeature {
-  type: "Feature";
-  geometry: {
-    type: "Point";
-    coordinates: [number, number]; // [x, y] in pixel space
-  };
-  properties: MarkerProperties;
-}
-
-export interface MapFeatureCollection {
-  type: "FeatureCollection";
-  features: MapFeature[];
-}
+export type MapFeature = Feature<Point, MarkerProperties>;
+export type MapFeatureCollection = FeatureCollection<Point, MarkerProperties>;
 
 export interface LoadedLayer {
   config: LayerConfig;

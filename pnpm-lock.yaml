@@ -24,6 +24,9 @@ importers:
       '@eslint/js':
         specifier: 9.39.3
         version: 9.39.3
+      '@types/geojson':
+        specifier: 7946.0.16
+        version: 7946.0.16
       '@types/leaflet':
         specifier: 1.9.21
         version: 1.9.21
