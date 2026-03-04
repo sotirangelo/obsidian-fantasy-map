@@ -1,14 +1,16 @@
 import type * as L from "leaflet";
 import type * as v from "valibot";
-import type { Feature, FeatureCollection, Point } from "geojson";
+import type { Feature, FeatureCollection, Point, Polygon } from "geojson";
 import type {
   MapConfigSchema,
+  MapScaleSchema,
   FantasyMapSettingsSchema,
   LayerConfigSchema,
 } from "./schemas";
 
 export type LayerConfig = v.InferOutput<typeof LayerConfigSchema>;
 export type MapConfig = v.InferOutput<typeof MapConfigSchema>;
+export type MapScale = v.InferOutput<typeof MapScaleSchema>;
 export type FantasyMapSettings = v.InferOutput<typeof FantasyMapSettingsSchema>;
 
 export const DEFAULT_SETTINGS: FantasyMapSettings = {
@@ -22,10 +24,22 @@ export interface MarkerProperties {
   icon: string;
   color: string;
   description: string;
+  localMapId?: string;
 }
 
-export type MapFeature = Feature<Point, MarkerProperties>;
-export type MapFeatureCollection = FeatureCollection<Point, MarkerProperties>;
+export interface PolygonProperties {
+  id: string;
+  name: string;
+  note: string;
+  color: string;
+  description: string;
+  localMapId?: string;
+}
+
+export type MarkerFeature = Feature<Point, MarkerProperties>;
+export type PolygonFeature = Feature<Polygon, PolygonProperties>;
+export type MapFeature = MarkerFeature | PolygonFeature;
+export type MapFeatureCollection = FeatureCollection;
 
 export interface LoadedLayer {
   config: LayerConfig;

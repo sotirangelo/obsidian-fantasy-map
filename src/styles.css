@@ -106,6 +106,10 @@
   background: var(--background-primary);
 }
 
+.leaflet-container.is-calibrating {
+  cursor: crosshair;
+}
+
 .fantasy-map-notice,
 .fantasy-map-error {
   padding: 2em;

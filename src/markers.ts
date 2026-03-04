@@ -1,5 +1,5 @@
 import * as L from "leaflet";
-import type { MapFeature } from "./types";
+import type { MarkerFeature } from "./types";
 import { MARKER_ICON_SIZE, MARKER_ICON_ANCHOR, MARKER_POPUP_ANCHOR } from "./config";
 
 // @ts-ignore - esbuild converts these to data URLs
@@ -19,7 +19,7 @@ export function fixLeafletDefaultIcons(): void {
 }
 
 export function createMarkerFromFeature(
-  feature: MapFeature,
+  feature: MarkerFeature,
   latlng: L.LatLng,
 ): L.Marker {
   const props = feature.properties;

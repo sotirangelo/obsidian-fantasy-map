@@ -17,7 +17,7 @@ export class MapPickerModal extends FuzzySuggestModal<MapConfig> {
   }
 
   getItemText(item: MapConfig): string {
-    return item.name || item.mapImagePath || item.id;
+    return (item as MapConfig & { displayName?: string }).displayName ?? (item.name || item.mapImagePath || item.id);
   }
 
   onChooseItem(item: MapConfig): void {

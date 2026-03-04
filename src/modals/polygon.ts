@@ -1,25 +1,25 @@
 import { App, Modal } from "obsidian";
 import { mount, unmount } from "svelte";
-import type { MarkerProperties } from "../types";
+import type { PolygonProperties } from "../types";
 import { DEFAULT_MARKER_COLOR } from "../config";
 import { NoteSuggestModal } from "./link-note";
-import MarkerForm from "../components/MarkerForm.svelte";
+import PolygonForm from "../components/PolygonForm.svelte";
 
-export class MarkerModal extends Modal {
-  private properties: MarkerProperties;
+export class PolygonModal extends Modal {
+  private properties: PolygonProperties;
   private layerOptions: { id: string; name: string }[];
   private selectedLayerId: string;
-  private onSubmit: (properties: MarkerProperties, layerId: string) => void;
+  private onSubmit: (properties: PolygonProperties, layerId: string) => void;
   private onLinkLocalMap?: (featureId: string, cb: (mapId: string) => void) => void;
   private isEdit: boolean;
   private mountedForm: ReturnType<typeof mount> | null = null;
 
   constructor(
     app: App,
-    existingProperties: MarkerProperties | null,
+    existingProperties: PolygonProperties | null,
     layerOptions: { id: string; name: string }[],
     defaultLayerId: string,
-    onSubmit: (properties: MarkerProperties, layerId: string) => void,
+    onSubmit: (properties: PolygonProperties, layerId: string) => void,
     onLinkLocalMap?: (featureId: string, cb: (mapId: string) => void) => void,
   ) {
     super(app);
@@ -30,7 +30,6 @@ export class MarkerModal extends Modal {
           id: crypto.randomUUID(),
           name: "",
           note: "",
-          icon: "",
           color: DEFAULT_MARKER_COLOR,
           description: "",
         };
@@ -41,9 +40,8 @@ export class MarkerModal extends Modal {
   }
 
   onOpen(): void {
-    const { contentEl } = this;
-    this.mountedForm = mount(MarkerForm, {
-      target: contentEl,
+    this.mountedForm = mount(PolygonForm, {
+      target: this.contentEl,
       props: {
         initialProperties: this.properties,
         layerOptions: this.layerOptions,
@@ -57,7 +55,7 @@ export class MarkerModal extends Modal {
         onLinkLocalMap: this.onLinkLocalMap
           ? (cb: (mapId: string) => void) => this.onLinkLocalMap!(this.properties.id, cb)
           : undefined,
-        onSubmit: (props: MarkerProperties, layerId: string) => {
+        onSubmit: (props: PolygonProperties, layerId: string) => {
           this.close();
           this.onSubmit(props, layerId);
         },
