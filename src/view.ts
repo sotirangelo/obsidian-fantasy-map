@@ -1,6 +1,7 @@
 import { ItemView, WorkspaceLeaf, Menu, Notice } from "obsidian";
 import * as L from "leaflet";
 import "@geoman-io/leaflet-geoman-free";
+import { mount, unmount } from "svelte";
 import type { Point } from "geojson";
 import type FantasyMapPlugin from "./main";
 import type {
@@ -13,6 +14,7 @@ import { loadConfiguredLayers } from "./layers";
 import { createMarkerFromFeature, fixLeafletDefaultIcons } from "./markers";
 import { MarkerModal, DeleteConfirmModal } from "./modals";
 import { MAP_CONFIG, GEOMAN_CONFIG } from "./config";
+import MarkerPopup from "./components/MarkerPopup.svelte";
 
 export const FANTASY_MAP_VIEW = "fantasy-map-view";
 
@@ -237,8 +239,37 @@ export class FantasyMapView extends ItemView {
   ): L.Marker {
     const marker = createMarkerFromFeature(feature, latlng);
 
-    const popupContent = this.buildPopupContent(feature.properties, layer);
-    marker.bindPopup(popupContent);
+    const popupEl = document.createElement("div");
+    marker.bindPopup(popupEl, { minWidth: 200 });
+
+    let popupComponent: ReturnType<typeof mount> | null = null;
+
+    marker.on("popupopen", () => {
+      popupComponent = mount(MarkerPopup, {
+        target: popupEl,
+        props: {
+          properties: feature.properties,
+          onOpenNote: (path: string) => {
+            void this.app.workspace.openLinkText(path, "", false);
+          },
+          onEdit: () => {
+            this.map?.closePopup();
+            this.editMarker(feature.properties, layer);
+          },
+          onDelete: () => {
+            this.map?.closePopup();
+            this.deleteMarker(feature.properties, layer);
+          },
+        },
+      });
+    });
+
+    marker.on("popupclose", () => {
+      if (popupComponent) {
+        unmount(popupComponent);
+        popupComponent = null;
+      }
+    });
 
     // Save coordinates on drag end
     marker.on("dragend", () => {
@@ -248,62 +279,6 @@ export class FantasyMapView extends ItemView {
     });
 
     return marker;
-  }
-
-  // --- Popup Content ---
-
-  private buildPopupContent(
-    properties: MarkerProperties,
-    layer: LoadedLayer,
-  ): HTMLDivElement {
-    const div = document.createElement("div");
-    div.addClass("fantasy-map-popup");
-
-    const title = div.createEl("h4", { text: properties.name });
-    if (properties.icon) {
-      title.prepend(document.createTextNode(properties.icon + " "));
-    }
-
-    if (properties.description) {
-      div.createEl("p", {
-        text: properties.description,
-        cls: "popup-description",
-      });
-    }
-
-    if (properties.note) {
-      const link = div.createEl("a", {
-        text: `Open: ${properties.note}`,
-        cls: "popup-note-link",
-        href: "#",
-      });
-      link.addEventListener("click", (ev) => {
-        ev.preventDefault();
-        void this.app.workspace.openLinkText(properties.note, "", false);
-      });
-    }
-
-    const buttons = div.createDiv({ cls: "popup-buttons" });
-
-    const editBtn = buttons.createEl("button", {
-      text: "Edit",
-      cls: "popup-btn",
-    });
-    editBtn.addEventListener("click", () => {
-      this.map?.closePopup();
-      this.editMarker(properties, layer);
-    });
-
-    const deleteBtn = buttons.createEl("button", {
-      text: "Delete",
-      cls: "popup-btn popup-btn-danger",
-    });
-    deleteBtn.addEventListener("click", () => {
-      this.map?.closePopup();
-      this.deleteMarker(properties, layer);
-    });
-
-    return div;
   }
 
   // --- Add Marker ---

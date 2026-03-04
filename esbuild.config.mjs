@@ -1,6 +1,7 @@
 // @ts-check
 
 import esbuild from "esbuild";
+import sveltePlugin from "esbuild-svelte";
 import process from "process";
 import { builtinModules } from "module";
 
@@ -37,6 +38,11 @@ const context = await esbuild.context({
     ".png": "dataurl",
   },
   minify: production,
+  plugins: [
+    sveltePlugin({
+      compilerOptions: { css: "injected" },
+    }),
+  ],
 });
 
 if (production) {
