@@ -61,7 +61,7 @@ export class MarkerModal extends Modal {
 
   onClose(): void {
     if (this.mountedForm) {
-      unmount(this.mountedForm);
+      void unmount(this.mountedForm);
       this.mountedForm = null;
     }
     this.contentEl.empty();

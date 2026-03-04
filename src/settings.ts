@@ -17,7 +17,7 @@ export class FantasyMapSettingTab extends PluginSettingTab {
     const { containerEl } = this;
 
     if (this.mountedPanel) {
-      unmount(this.mountedPanel);
+      void unmount(this.mountedPanel);
       this.mountedPanel = null;
     }
     containerEl.empty();
@@ -35,7 +35,7 @@ export class FantasyMapSettingTab extends PluginSettingTab {
 
   hide(): void {
     if (this.mountedPanel) {
-      unmount(this.mountedPanel);
+      void unmount(this.mountedPanel);
       this.mountedPanel = null;
     }
   }
