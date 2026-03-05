@@ -1,9 +1,9 @@
 import { App, Modal } from "obsidian";
 import { mount, unmount } from "svelte";
-import type { MarkerProperties } from "../types";
+import type { MarkerProperties, PolygonProperties } from "../types";
 import { DEFAULT_MARKER_COLOR } from "../config";
 import { NoteSuggestModal } from "./link-note";
-import MarkerForm from "../components/MarkerForm.svelte";
+import FeatureForm from "../components/FeatureForm.svelte";
 
 export class MarkerModal extends Modal {
   private properties: MarkerProperties;
@@ -42,9 +42,10 @@ export class MarkerModal extends Modal {
 
   onOpen(): void {
     const { contentEl } = this;
-    this.mountedForm = mount(MarkerForm, {
+    this.mountedForm = mount(FeatureForm, {
       target: contentEl,
       props: {
+        featureType: "marker" as const,
         initialProperties: this.properties,
         layerOptions: this.layerOptions,
         initialLayerId: this.selectedLayerId,
@@ -57,9 +58,9 @@ export class MarkerModal extends Modal {
         onLinkLocalMap: this.onLinkLocalMap
           ? (cb: (mapId: string) => void) => { this.onLinkLocalMap!(this.properties.id, cb); }
           : undefined,
-        onSubmit: (props: MarkerProperties, layerId: string) => {
+        onSubmit: (props: MarkerProperties | PolygonProperties, layerId: string) => {
           this.close();
-          this.onSubmit(props, layerId);
+          this.onSubmit(props as MarkerProperties, layerId);
         },
       },
     });
