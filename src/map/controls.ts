@@ -41,7 +41,7 @@ export function createBackButton(
     onAdd: () => {
       const btn = L.DomUtil.create(
         "button",
-        "leaflet-bar fantasy-map-back-btn",
+        "leaflet-bar fantasy-map-toolbar-btn",
       );
       btn.textContent = `↩ ${parentName}`;
       btn.title = `Back to ${parentName}`;
@@ -66,7 +66,10 @@ export function createScaleBar(
     realDistance: number;
     unit: string;
   },
-  computeBar: (pixelsPerUnit: number, maxWidth: number) => { distance: number; barPixels: number },
+  computeBar: (
+    pixelsPerUnit: number,
+    maxWidth: number,
+  ) => { distance: number; barPixels: number },
 ): { control: L.Control; update: () => void } {
   const scaleBarDiv = L.DomUtil.create("div", "fantasy-map-scale-bar");
 

@@ -61,6 +61,8 @@ export class FantasyMapView extends ItemView {
   private updateScaleBar: (() => void) | null = null;
   private calibration: CalibrationHandler | null = null;
   private measure: MeasureHandler | null = null;
+  private selectedLayer: L.Layer | null = null;
+  private selectionRing: L.CircleMarker | null = null;
 
   constructor(leaf: WorkspaceLeaf, plugin: FantasyMapPlugin) {
     super(leaf);
@@ -178,6 +180,7 @@ export class FantasyMapView extends ItemView {
     this.layerControl = null;
     this.scaleBarControl = null;
     this.updateScaleBar = null;
+    this.clearSelection();
     this.calibration?.cleanup();
     this.calibration = null;
     this.measure?.cleanup();
@@ -471,28 +474,37 @@ export class FantasyMapView extends ItemView {
 
     marker.on("click", () => {
       const props = feature.properties;
-      this.selectFeature({
-        featureType: "marker",
-        properties: props,
-        onOpenNote: (path: string) => {
-          void this.app.workspace.openLinkText(path, "", false);
-        },
-        onEdit: () => {
-          this.editMarker(props, layer);
-        },
-        onDelete: () => {
-          this.deleteFeature(props, layer);
-        },
-        onOpenLocalMap: () =>
-          props.localMapId
-            ? void this.plugin.openMap(props.localMapId)
+      this.selectFeature(
+        {
+          featureType: "marker",
+          properties: props,
+          onOpenNote: (path: string) => {
+            void this.app.workspace.openLinkText(path, "", false);
+          },
+          onEdit: () => {
+            this.editMarker(props, layer);
+          },
+          onDelete: () => {
+            this.deleteFeature(props, layer);
+          },
+          onOpenLocalMap: () =>
+            props.localMapId
+              ? void this.plugin.openMap(props.localMapId)
+              : undefined,
+          onLinkLocalMap: !props.localMapId
+            ? () => {
+                this.openLinkLocalMapModal(feature as MapFeature, layer);
+              }
             : undefined,
-        onLinkLocalMap: !props.localMapId
-          ? () => {
-              this.openLinkLocalMapModal(feature as MapFeature, layer);
-            }
-          : undefined,
-      });
+        },
+        marker,
+      );
+    });
+
+    marker.on("drag", () => {
+      if (this.selectionRing && this.selectedLayer === marker) {
+        this.selectionRing.setLatLng(marker.getLatLng());
+      }
     });
 
     marker.on("dragend", () => {
@@ -512,28 +524,31 @@ export class FantasyMapView extends ItemView {
     leafletPolygon.on("click", (e: L.LeafletMouseEvent) => {
       L.DomEvent.stopPropagation(e);
       const props = feature.properties;
-      this.selectFeature({
-        featureType: "polygon",
-        properties: props,
-        onOpenNote: (path: string) => {
-          void this.app.workspace.openLinkText(path, "", false);
-        },
-        onEdit: () => {
-          this.editPolygon(props, layer);
-        },
-        onDelete: () => {
-          this.deleteFeature(props, layer);
-        },
-        onOpenLocalMap: () =>
-          props.localMapId
-            ? void this.plugin.openMap(props.localMapId)
+      this.selectFeature(
+        {
+          featureType: "polygon",
+          properties: props,
+          onOpenNote: (path: string) => {
+            void this.app.workspace.openLinkText(path, "", false);
+          },
+          onEdit: () => {
+            this.editPolygon(props, layer);
+          },
+          onDelete: () => {
+            this.deleteFeature(props, layer);
+          },
+          onOpenLocalMap: () =>
+            props.localMapId
+              ? void this.plugin.openMap(props.localMapId)
+              : undefined,
+          onLinkLocalMap: !props.localMapId
+            ? () => {
+                this.openLinkLocalMapModal(feature as MapFeature, layer);
+              }
             : undefined,
-        onLinkLocalMap: !props.localMapId
-          ? () => {
-              this.openLinkLocalMapModal(feature as MapFeature, layer);
-            }
-          : undefined,
-      });
+        },
+        leafletPolygon,
+      );
     });
   }
 
@@ -835,10 +850,76 @@ export class FantasyMapView extends ItemView {
 
   // --- Utilities ---
 
-  private selectFeature(state: SidebarState | null): void {
+  private selectFeature(
+    state: SidebarState | null,
+    leafletLayer?: L.Layer,
+  ): void {
+    // Clear previous selection highlight
+    this.clearSelection();
+
     this.updateSidebar?.(state);
     if (this.sidebarEl) {
       this.sidebarEl.classList.toggle("fantasy-map-sidebar--hidden", !state);
+    }
+
+    if (state && leafletLayer && this.map) {
+      this.selectedLayer = leafletLayer;
+
+      if (leafletLayer instanceof L.Marker) {
+        // Add a pulsing ring around the selected marker
+        const latlng = leafletLayer.getLatLng();
+        this.selectionRing = L.circleMarker(latlng, {
+          radius: 20,
+          weight: 3,
+          color: "var(--text-accent)",
+          fillColor: "var(--text-accent)",
+          fillOpacity: 0.15,
+          className: "fantasy-map-selection-ring",
+          interactive: false,
+        }).addTo(this.map);
+        // Add selected class to the marker element
+        const el = leafletLayer.getElement();
+        el?.classList.add("fantasy-map-marker--selected");
+      } else if (leafletLayer instanceof L.Polygon) {
+        // Highlight the polygon with accent color border and brighter fill
+        const feature = (
+          leafletLayer as unknown as { feature?: PolygonFeature }
+        ).feature;
+        const fillColor = feature?.properties.color ?? "#3388ff";
+        leafletLayer.setStyle({
+          weight: 4,
+          color: "var(--text-accent)",
+          fillColor,
+          fillOpacity: 0.45,
+          className: "fantasy-map-polygon--selected",
+        });
+      }
+    }
+  }
+
+  private clearSelection(): void {
+    if (this.selectionRing && this.map) {
+      this.map.removeLayer(this.selectionRing);
+      this.selectionRing = null;
+    }
+    if (this.selectedLayer) {
+      if (this.selectedLayer instanceof L.Marker) {
+        const el = this.selectedLayer.getElement();
+        el?.classList.remove("fantasy-map-marker--selected");
+      } else if (this.selectedLayer instanceof L.Polygon) {
+        // Restore original polygon style
+        const feature = (
+          this.selectedLayer as unknown as { feature?: PolygonFeature }
+        ).feature;
+        const color = feature?.properties.color ?? "#3388ff";
+        this.selectedLayer.setStyle({
+          weight: 2,
+          dashArray: undefined,
+          className: "",
+        });
+        this.selectedLayer.setStyle({ color, fillColor: color });
+      }
+      this.selectedLayer = null;
     }
   }
 
