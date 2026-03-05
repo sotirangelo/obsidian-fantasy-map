@@ -1,6 +1,6 @@
 import { Notice, Plugin } from "obsidian";
 import * as v from "valibot";
-import { FantasyMapView, FANTASY_MAP_VIEW } from "./view";
+import { FantasyMapView, FANTASY_MAP_VIEW } from "./map/view";
 import { FantasyMapSettingTab } from "./settings";
 import { MapPickerModal, CreateMapModal } from "./modals";
 import { DEFAULT_SETTINGS } from "./types";
@@ -42,20 +42,17 @@ export default class FantasyMapPlugin extends Plugin {
   }
 
   private openCreateMapModal(): void {
-    new CreateMapModal(
-      this.app,
-      (name: string, imagePath: string) => {
-        const newMap = {
-          id: crypto.randomUUID(),
-          name,
-          mapImagePath: imagePath,
-          layers: [],
-          defaultLayerId: "",
-        };
-        this.settings.maps.push(newMap);
-        void this.saveSettings().then(() => this.openMap(newMap.id));
-      },
-    ).open();
+    new CreateMapModal(this.app, (name: string, imagePath: string) => {
+      const newMap = {
+        id: crypto.randomUUID(),
+        name,
+        mapImagePath: imagePath,
+        layers: [],
+        defaultLayerId: "",
+      };
+      this.settings.maps.push(newMap);
+      void this.saveSettings().then(() => this.openMap(newMap.id));
+    }).open();
   }
 
   private openMapPicker(): void {
@@ -79,7 +76,7 @@ export default class FantasyMapPlugin extends Plugin {
       ...m,
       displayName: m.parentMapId
         ? `↳ ${m.name || m.id} (in ${parentMap.get(m.parentMapId) ?? m.parentMapId})`
-        : (m.name || m.id),
+        : m.name || m.id,
     }));
 
     new MapPickerModal(this.app, displayMaps, (map) => {
