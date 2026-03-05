@@ -25,6 +25,8 @@ export interface MarkerProperties {
   color: string;
   description: string;
   localMapId?: string;
+  notes?: string[];
+  tags?: string[];
 }
 
 export interface PolygonProperties {
@@ -34,6 +36,8 @@ export interface PolygonProperties {
   color: string;
   description: string;
   localMapId?: string;
+  notes?: string[];
+  tags?: string[];
 }
 
 export type MarkerFeature = Feature<Point, MarkerProperties>;

@@ -26,13 +26,16 @@
     onSubmit,
   }: Props = $props();
 
-  const label = featureType === "marker" ? "Marker" : "Region";
+  const label = untrack(() => featureType === "marker" ? "Marker" : "Region");
 
   let name = $state(untrack(() => initialProperties.name));
   let note = $state(untrack(() => initialProperties.note));
   let description = $state(untrack(() => initialProperties.description));
   let localMapId = $state(untrack(() => initialProperties.localMapId ?? ""));
   let selectedLayerId = $state(untrack(() => initialLayerId));
+  let notes = $state<string[]>(untrack(() => [...(initialProperties.notes ?? [])]));
+  let tags = $state<string[]>(untrack(() => [...(initialProperties.tags ?? [])]));
+  let tagInput = $state("");
   let error = $state("");
 
   let icon = $state(
@@ -49,12 +52,17 @@
     }
     error = "";
 
+    const filteredNotes = notes.filter((n) => n.trim());
+    const filteredTags = tags.filter((t) => t.trim());
+
     const base = {
       id: initialProperties.id,
       name: name.trim(),
       note,
       description,
       localMapId: localMapId || undefined,
+      notes: filteredNotes.length > 0 ? filteredNotes : undefined,
+      tags: filteredTags.length > 0 ? filteredTags : undefined,
     };
 
     if (featureType === "marker") {
@@ -67,10 +75,43 @@
     }
   }
 
-  function browseNote() {
+  function browseMainNote() {
     onBrowseNote((path) => {
       note = path;
     });
+  }
+
+  function browseAdditionalNote(index: number) {
+    onBrowseNote((path) => {
+      notes[index] = path;
+    });
+  }
+
+  function addNote() {
+    notes.push("");
+  }
+
+  function removeNote(index: number) {
+    notes.splice(index, 1);
+  }
+
+  function addTag() {
+    const trimmed = tagInput.trim();
+    if (trimmed && !tags.includes(trimmed)) {
+      tags.push(trimmed);
+      tagInput = "";
+    }
+  }
+
+  function handleTagKeydown(e: KeyboardEvent) {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      addTag();
+    }
+  }
+
+  function removeTag(index: number) {
+    tags.splice(index, 1);
   }
 
   function handleLinkLocalMap() {
@@ -132,24 +173,6 @@
 
 <div class="setting-item">
   <div class="setting-item-info">
-    <div class="setting-item-name">Linked note</div>
-    <div class="setting-item-description">
-      Obsidian note to link{featureType === "marker" ? " (e.g. Cities/Waterdeep)" : ""}
-    </div>
-  </div>
-  <div class="setting-item-control">
-    <input
-      type="text"
-      placeholder={featureType === "marker" ? "Cities/waterdeep" : "Regions/dark-forest"}
-      value={note}
-      oninput={(e) => (note = e.currentTarget.value)}
-    />
-    <button onclick={browseNote}>Browse</button>
-  </div>
-</div>
-
-<div class="setting-item">
-  <div class="setting-item-info">
     <div class="setting-item-name">Description</div>
     <div class="setting-item-description">Short description shown in the {featureType === "marker" ? "popup" : "sidebar"}</div>
   </div>
@@ -161,6 +184,73 @@
       value={description}
       oninput={(e) => (description = e.currentTarget.value)}
     ></textarea>
+  </div>
+</div>
+
+<div class="setting-item">
+  <div class="setting-item-info">
+    <div class="setting-item-name">Main note</div>
+    <div class="setting-item-description">Primary Obsidian note linked to this {label.toLowerCase()}</div>
+  </div>
+  <div class="setting-item-control">
+    <input
+      type="text"
+      placeholder={featureType === "marker" ? "Cities/waterdeep" : "Regions/dark-forest"}
+      value={note}
+      oninput={(e) => (note = e.currentTarget.value)}
+    />
+    <button onclick={browseMainNote}>Browse</button>
+  </div>
+</div>
+
+<div class="setting-item">
+  <div class="setting-item-info">
+    <div class="setting-item-name">Additional notes</div>
+    <div class="setting-item-description">Other Obsidian notes related to this {label.toLowerCase()}</div>
+  </div>
+  <div class="setting-item-control fantasy-map-notes-control">
+    {#each notes as n, i (i)}
+      <div class="fantasy-map-note-row">
+        <input
+          type="text"
+          placeholder="Path/to/note"
+          value={n}
+          oninput={(e) => (notes[i] = e.currentTarget.value)}
+        />
+        <button onclick={() => browseAdditionalNote(i)}>Browse</button>
+        <button class="fantasy-map-btn-remove" onclick={() => removeNote(i)}>×</button>
+      </div>
+    {/each}
+    <button onclick={addNote}>+ Add note</button>
+  </div>
+</div>
+
+<div class="setting-item">
+  <div class="setting-item-info">
+    <div class="setting-item-name">Tags</div>
+    <div class="setting-item-description">Tags for categorization</div>
+  </div>
+  <div class="setting-item-control fantasy-map-tags-control">
+    {#if tags.length > 0}
+      <div class="fantasy-map-tag-list">
+        {#each tags as tag, i (i)}
+          <span class="fantasy-map-tag">
+            {tag}
+            <button class="fantasy-map-tag-remove" onclick={() => removeTag(i)}>×</button>
+          </span>
+        {/each}
+      </div>
+    {/if}
+    <div class="fantasy-map-tag-input-row">
+      <input
+        type="text"
+        placeholder="Add a tag..."
+        value={tagInput}
+        oninput={(e) => (tagInput = e.currentTarget.value)}
+        onkeydown={handleTagKeydown}
+      />
+      <button onclick={addTag}>Add</button>
+    </div>
   </div>
 </div>
 
