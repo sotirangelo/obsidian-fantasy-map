@@ -2,7 +2,7 @@ import { App, Modal } from "obsidian";
 import { mount, unmount } from "svelte";
 import type { MarkerProperties, PolygonProperties } from "../types";
 import { DEFAULT_MARKER_COLOR } from "../config";
-import { NoteSuggestModal } from "./link-note";
+import { NoteSuggestModal, TagSuggestModal } from "./link-note";
 import FeatureForm from "../components/FeatureForm.svelte";
 
 export class PolygonModal extends Modal {
@@ -52,6 +52,9 @@ export class PolygonModal extends Modal {
           new NoteSuggestModal(this.app, (file) => {
             cb(file.path.replace(/\.md$/, ""));
           }).open();
+        },
+        onBrowseTag: (cb: (tag: string) => void) => {
+          new TagSuggestModal(this.app, cb).open();
         },
         onLinkLocalMap: this.onLinkLocalMap
           ? (cb: (mapId: string) => void) => { this.onLinkLocalMap!(this.properties.id, cb); }
