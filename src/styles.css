@@ -102,6 +102,30 @@
   color: white;
 }
 
+/* Right toolbar buttons */
+.fantasy-map-toolbar-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  cursor: pointer;
+  background: var(--background-primary);
+  color: var(--text-normal);
+  border: none;
+  font-size: 0;
+  line-height: 1;
+}
+
+.fantasy-map-toolbar-btn:hover {
+  background: var(--interactive-hover);
+}
+
+.fantasy-map-toolbar-btn svg {
+  display: block;
+}
+
 .leaflet-container {
   background: var(--background-primary);
 }

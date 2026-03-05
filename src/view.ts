@@ -1,4 +1,4 @@
-import { ItemView, WorkspaceLeaf, Menu, Notice } from "obsidian";
+import { ItemView, WorkspaceLeaf, Menu, Notice, setIcon } from "obsidian";
 import * as L from "leaflet";
 import "@geoman-io/leaflet-geoman-free";
 import { mount, unmount } from "svelte";
@@ -317,10 +317,10 @@ export class FantasyMapView extends ItemView {
       onAdd: () => {
         const btn = L.DomUtil.create(
           "button",
-          "leaflet-bar fantasy-map-scale-btn",
+          "leaflet-bar fantasy-map-toolbar-btn fantasy-map-scale-btn",
         );
-        btn.textContent = "Set Scale";
-        btn.title = "Calibrate map scale";
+        btn.title = "Set Scale";
+        setIcon(btn, "pencil-ruler");
         L.DomEvent.on(btn, "click", (e) => {
           L.DomEvent.stopPropagation(e);
           this.startCalibration();
@@ -329,7 +329,7 @@ export class FantasyMapView extends ItemView {
       },
     });
 
-    new SetScaleControl({ position: "topleft" }).addTo(this.map);
+    new SetScaleControl({ position: "topright" }).addTo(this.map);
   }
 
   private addAddLayerControl(config: MapConfig): void {
@@ -339,10 +339,10 @@ export class FantasyMapView extends ItemView {
       onAdd: () => {
         const btn = L.DomUtil.create(
           "button",
-          "leaflet-bar fantasy-map-add-layer-btn",
+          "leaflet-bar fantasy-map-toolbar-btn fantasy-map-add-layer-btn",
         );
-        btn.textContent = "Add Layer";
-        btn.title = "Add a new layer to this map";
+        btn.title = "Add Layer";
+        setIcon(btn, "layers");
         L.DomEvent.on(btn, "click", (e) => {
           L.DomEvent.stopPropagation(e);
           this.promptAddLayer(config);
@@ -351,7 +351,7 @@ export class FantasyMapView extends ItemView {
       },
     });
 
-    new AddLayerControl({ position: "topleft" }).addTo(this.map);
+    new AddLayerControl({ position: "topright" }).addTo(this.map);
   }
 
   private promptAddLayer(config: MapConfig): void {
@@ -467,10 +467,10 @@ export class FantasyMapView extends ItemView {
       onAdd: () => {
         const btn = L.DomUtil.create(
           "button",
-          "leaflet-bar fantasy-map-measure-btn",
+          "leaflet-bar fantasy-map-toolbar-btn fantasy-map-measure-btn",
         );
-        btn.textContent = "Measure";
-        btn.title = "Measure distance between two points";
+        btn.title = "Measure Distance";
+        setIcon(btn, "ruler");
         L.DomEvent.on(btn, "click", (e) => {
           L.DomEvent.stopPropagation(e);
           this.startMeasure();
@@ -479,7 +479,7 @@ export class FantasyMapView extends ItemView {
       },
     });
 
-    new MeasureControl({ position: "topleft" }).addTo(this.map);
+    new MeasureControl({ position: "topright" }).addTo(this.map);
   }
 
   private startMeasure(): void {
@@ -525,10 +525,7 @@ export class FantasyMapView extends ItemView {
       this.measureMode = "off";
       this.map.getContainer().classList.remove("is-measuring");
 
-      const pxDist = pixelDistance(
-        [p1.lat, p1.lng],
-        [latlng.lat, latlng.lng],
-      );
+      const pxDist = pixelDistance([p1.lat, p1.lng], [latlng.lat, latlng.lng]);
 
       const config = this.getMapConfig();
       let label: string;
@@ -547,7 +544,10 @@ export class FantasyMapView extends ItemView {
 
       const midLat = (p1.lat + latlng.lat) / 2;
       const midLng = (p1.lng + latlng.lng) / 2;
-      this.measureResultPopup = L.popup({ closeButton: true, className: "fantasy-map-measure-popup" })
+      this.measureResultPopup = L.popup({
+        closeButton: true,
+        className: "fantasy-map-measure-popup",
+      })
         .setLatLng([midLat, midLng])
         .setContent(`<strong>${label}</strong>`)
         .openOn(this.map);
@@ -825,7 +825,9 @@ export class FantasyMapView extends ItemView {
         }
       },
       this.mapId
-        ? (featureId, cb) => { this.openLinkLocalMapForNew(featureId, cb); }
+        ? (featureId, cb) => {
+            this.openLinkLocalMapForNew(featureId, cb);
+          }
         : undefined,
     );
     modal.open();
@@ -893,7 +895,9 @@ export class FantasyMapView extends ItemView {
         this.refreshMapLayers();
       },
       this.mapId
-        ? (featureId, cb) => { this.openLinkLocalMapForNew(featureId, cb); }
+        ? (featureId, cb) => {
+            this.openLinkLocalMapForNew(featureId, cb);
+          }
         : undefined,
     );
     modal.open();
