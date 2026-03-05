@@ -158,6 +158,13 @@
   background: var(--background-modifier-border);
   color: var(--text-muted);
   font-size: 0.8em;
+  border: none;
+  cursor: pointer;
+}
+
+.sidebar-tag:hover {
+  background: var(--background-modifier-border-hover);
+  color: var(--text-normal);
 }
 
 /* Feature form: notes & tags */

@@ -11,6 +11,7 @@
     initialLayerId: string;
     isEdit: boolean;
     onBrowseNote: (cb: (path: string) => void) => void;
+    onBrowseTag: (cb: (tag: string) => void) => void;
     onLinkLocalMap?: (cb: (mapId: string) => void) => void;
     onSubmit: (properties: MarkerProperties | PolygonProperties, layerId: string) => void;
   }
@@ -22,6 +23,7 @@
     initialLayerId,
     isEdit,
     onBrowseNote,
+    onBrowseTag,
     onLinkLocalMap,
     onSubmit,
   }: Props = $props();
@@ -101,6 +103,14 @@
       tags.push(trimmed);
       tagInput = "";
     }
+  }
+
+  function browseTag() {
+    onBrowseTag((tag) => {
+      if (tag && !tags.includes(tag)) {
+        tags.push(tag);
+      }
+    });
   }
 
   function handleTagKeydown(e: KeyboardEvent) {
@@ -250,6 +260,7 @@
         onkeydown={handleTagKeydown}
       />
       <button onclick={addTag}>Add</button>
+      <button onclick={browseTag}>Browse tags</button>
     </div>
   </div>
 </div>

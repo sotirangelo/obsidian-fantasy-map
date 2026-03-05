@@ -46,6 +46,7 @@ interface SidebarState {
   onOpenNote: (path: string) => void;
   onReadNote: (path: string) => Promise<string | null>;
   onRenderMarkdown: (markdown: string, el: HTMLElement) => void;
+  onSearchTag: (tag: string) => void;
   onEdit: () => void;
   onDelete: () => void;
   onOpenLocalMap?: () => void;
@@ -504,6 +505,10 @@ export class FantasyMapView extends ItemView {
               this,
             );
           },
+          onSearchTag: (tag: string) => {
+            const search = (this.app as any).internalPlugins?.getPluginById?.("global-search")?.instance;
+            search?.openGlobalSearch(`tag:${tag}`);
+          },
           onEdit: () => {
             this.editMarker(props, layer);
           },
@@ -568,6 +573,10 @@ export class FantasyMapView extends ItemView {
               "",
               this,
             );
+          },
+          onSearchTag: (tag: string) => {
+            const search = (this.app as any).internalPlugins?.getPluginById?.("global-search")?.instance;
+            search?.openGlobalSearch(`tag:${tag}`);
           },
           onEdit: () => {
             this.editPolygon(props, layer);

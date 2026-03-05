@@ -7,6 +7,7 @@
     onOpenNote: (path: string) => void;
     onReadNote: (path: string) => Promise<string | null>;
     onRenderMarkdown: (markdown: string, el: HTMLElement) => void;
+    onSearchTag: (tag: string) => void;
     onEdit: () => void;
     onDelete: () => void;
     onOpenLocalMap?: () => void;
@@ -122,7 +123,10 @@
           <div class="sidebar-detail-label">Tags</div>
           <div class="sidebar-tag-list">
             {#each selected.properties.tags as tag}
-              <span class="sidebar-tag">{tag}</span>
+              <button
+                class="sidebar-tag"
+                onclick={() => selected?.onSearchTag(tag)}
+              >{tag}</button>
             {/each}
           </div>
         </div>
