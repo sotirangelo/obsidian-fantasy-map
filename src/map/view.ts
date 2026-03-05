@@ -1,4 +1,10 @@
-import { ItemView, WorkspaceLeaf, Menu, Notice } from "obsidian";
+import {
+  ItemView,
+  WorkspaceLeaf,
+  Menu,
+  Notice,
+  MarkdownRenderer,
+} from "obsidian";
 import * as L from "leaflet";
 import "@geoman-io/leaflet-geoman-free";
 import { mount, unmount } from "svelte";
@@ -32,12 +38,14 @@ import {
 } from "./controls";
 import { CalibrationHandler } from "./calibration";
 import { MeasureHandler } from "./measure";
-import MarkerSidebar from "../components/MarkerSidebar.svelte";
+import Sidebar from "../components/Sidebar.svelte";
 
 interface SidebarState {
   featureType: "marker" | "polygon";
   properties: MarkerProperties | PolygonProperties;
   onOpenNote: (path: string) => void;
+  onReadNote: (path: string) => Promise<string | null>;
+  onRenderMarkdown: (markdown: string, el: HTMLElement) => void;
   onEdit: () => void;
   onDelete: () => void;
   onOpenLocalMap?: () => void;
@@ -129,7 +137,7 @@ export class FantasyMapView extends ItemView {
     });
 
     this.mapContainerEl = container.createDiv({ cls: "fantasy-map-container" });
-    this.sidebarComponent = mount(MarkerSidebar, {
+    this.sidebarComponent = mount(Sidebar, {
       target: this.sidebarEl,
       props: {
         registerUpdate: (fn: (state: SidebarState | null) => void) => {
@@ -481,6 +489,21 @@ export class FantasyMapView extends ItemView {
           onOpenNote: (path: string) => {
             void this.app.workspace.openLinkText(path, "", false);
           },
+          onReadNote: async (path: string) => {
+            const file = this.app.vault.getFileByPath(`${path}.md`);
+            if (!file) return null;
+            return this.app.vault.cachedRead(file);
+          },
+          onRenderMarkdown: (markdown: string, el: HTMLElement) => {
+            el.empty();
+            void MarkdownRenderer.render(
+              this.app,
+              markdown,
+              el,
+              "",
+              this,
+            );
+          },
           onEdit: () => {
             this.editMarker(props, layer);
           },
@@ -530,6 +553,21 @@ export class FantasyMapView extends ItemView {
           properties: props,
           onOpenNote: (path: string) => {
             void this.app.workspace.openLinkText(path, "", false);
+          },
+          onReadNote: async (path: string) => {
+            const file = this.app.vault.getFileByPath(`${path}.md`);
+            if (!file) return null;
+            return this.app.vault.cachedRead(file);
+          },
+          onRenderMarkdown: (markdown: string, el: HTMLElement) => {
+            el.empty();
+            void MarkdownRenderer.render(
+              this.app,
+              markdown,
+              el,
+              "",
+              this,
+            );
           },
           onEdit: () => {
             this.editPolygon(props, layer);

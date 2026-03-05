@@ -105,6 +105,132 @@
   color: white;
 }
 
+.sidebar-detail-section {
+  margin-bottom: 0.5em;
+}
+
+.sidebar-detail-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.sidebar-detail-label {
+  font-size: 0.75em;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  margin-bottom: 2px;
+}
+
+.sidebar-note-content {
+  font-size: 0.85em;
+  line-height: 1.5;
+  max-height: 300px;
+  overflow-y: auto;
+  border-left: 2px solid var(--background-modifier-border);
+  padding-left: 8px;
+  margin-bottom: 0.5em;
+}
+
+.sidebar-note-loading,
+.sidebar-note-error {
+  font-size: 0.85em;
+  color: var(--text-muted);
+  margin: 0 0 0.5em 0;
+}
+
+.sidebar-note-error {
+  color: var(--text-error);
+}
+
+.sidebar-tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.sidebar-tag {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 12px;
+  background: var(--background-modifier-border);
+  color: var(--text-muted);
+  font-size: 0.8em;
+}
+
+/* Feature form: notes & tags */
+.fantasy-map-notes-control {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.fantasy-map-note-row {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 4px;
+}
+
+.fantasy-map-note-row input {
+  flex: 1;
+}
+
+.fantasy-map-btn-remove {
+  padding: 4px 8px;
+  color: var(--text-error);
+  background: none;
+  border: 1px solid var(--text-error);
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.fantasy-map-tags-control {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.fantasy-map-tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+
+.fantasy-map-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 12px;
+  background: var(--background-modifier-border);
+  color: var(--text-muted);
+  font-size: 0.85em;
+}
+
+.fantasy-map-tag-remove {
+  background: none;
+  border: none;
+  padding: 0 2px;
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: 1em;
+  line-height: 1;
+}
+
+.fantasy-map-tag-remove:hover {
+  color: var(--text-error);
+}
+
+.fantasy-map-tag-input-row {
+  display: flex;
+  gap: 4px;
+}
+
+.fantasy-map-tag-input-row input {
+  flex: 1;
+}
+
 /* Right toolbar buttons */
 .fantasy-map-toolbar-btn {
   display: flex;
