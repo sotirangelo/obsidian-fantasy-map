@@ -60,6 +60,7 @@ export class FantasyMapView extends ItemView {
   private calPoint1: L.LatLng | null = null;
   private calTempLayers: L.Layer[] = [];
   private scaleBarControl: L.Control | null = null;
+  private updateScaleBar: (() => void) | null = null;
 
   // Measure distance state
   private measureMode: MeasureMode = "off";
@@ -185,6 +186,7 @@ export class FantasyMapView extends ItemView {
     this.calPoint1 = null;
     this.calTempLayers = [];
     this.scaleBarControl = null;
+    this.updateScaleBar = null;
     this.measureMode = "off";
     this.measurePoint1 = null;
     this.measureTempLayers = [];
@@ -574,27 +576,43 @@ export class FantasyMapView extends ItemView {
   private renderScaleBar(config: MapConfig): void {
     if (!this.map || !config.scale) return;
 
-    // Remove existing scale bar
+    // Remove existing scale bar and zoom listener
     if (this.scaleBarControl) {
       this.scaleBarControl.remove();
       this.scaleBarControl = null;
     }
+    if (this.updateScaleBar) {
+      this.map.off("zoomend", this.updateScaleBar);
+      this.updateScaleBar = null;
+    }
 
     const scale = config.scale;
-    const { distance, barPixels } = pickNiceDistance(scale, 200);
+    const map = this.map;
+
+    const scaleBarDiv = L.DomUtil.create("div", "fantasy-map-scale-bar");
+
+    const updateContent = (): void => {
+      const p1 = L.latLng(scale.point1[0], scale.point1[1]);
+      const p2 = L.latLng(scale.point2[0], scale.point2[1]);
+      const screenPx = map.latLngToContainerPoint(p1).distanceTo(map.latLngToContainerPoint(p2));
+      const pixelsPerUnit = screenPx / scale.realDistance;
+      const { distance, barPixels } = pickNiceDistance(pixelsPerUnit, 200);
+      // eslint-disable-next-line @microsoft/sdl/no-inner-html
+      scaleBarDiv.innerHTML = `<div class="scale-bar-title">Scale</div><div class="scale-bar-line" style="width:${Math.round(barPixels).toString()}px"></div><div class="scale-bar-label">${distance.toString()} ${scale.unit}</div>`;
+    };
+
+    updateContent();
 
     const ScaleBarControl = L.Control.extend({
-      onAdd: () => {
-        const div = L.DomUtil.create("div", "fantasy-map-scale-bar");
-        // eslint-disable-next-line @microsoft/sdl/no-inner-html
-        div.innerHTML = `<div class="scale-bar-line" style="width:${Math.round(barPixels).toString()}px"></div><div class="scale-bar-label">${distance.toString()} ${scale.unit}</div>`;
-        return div;
-      },
+      onAdd: () => scaleBarDiv,
     });
 
     this.scaleBarControl = new ScaleBarControl({
       position: "bottomleft",
     }).addTo(this.map);
+
+    this.updateScaleBar = updateContent;
+    this.map.on("zoomend", this.updateScaleBar);
   }
 
   // --- Parent Navigation (Local Maps) ---
