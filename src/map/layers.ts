@@ -1,6 +1,6 @@
 import type { DataAdapter } from "obsidian";
-import type { MapFeatureCollection, LoadedLayer, LayerConfig } from "./types";
-import { LAYERS_BASE_FOLDER } from "./config";
+import type { MapFeatureCollection, LoadedLayer, LayerConfig } from "../types";
+import { LAYERS_BASE_FOLDER } from "../config";
 
 export function getLayerFilePath(mapId: string, layerId: string): string {
   return `${LAYERS_BASE_FOLDER}/${mapId}/${layerId}.geojson`;

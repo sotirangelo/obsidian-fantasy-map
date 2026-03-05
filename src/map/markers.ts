@@ -1,12 +1,14 @@
 import * as L from "leaflet";
-import type { MarkerFeature } from "./types";
-import { MARKER_ICON_SIZE, MARKER_ICON_ANCHOR, MARKER_POPUP_ANCHOR } from "./config";
+import type { MarkerFeature } from "../types";
+import {
+  MARKER_ICON_SIZE,
+  MARKER_ICON_ANCHOR,
+  MARKER_POPUP_ANCHOR,
+} from "../config";
 
-// @ts-ignore - esbuild converts these to data URLs
+// esbuild converts these to data URLs
 import iconUrl from "leaflet/dist/images/marker-icon.png";
-// @ts-ignore
 import iconRetinaUrl from "leaflet/dist/images/marker-icon-2x.png";
-// @ts-ignore
 import shadowUrl from "leaflet/dist/images/marker-shadow.png";
 
 export function fixLeafletDefaultIcons(): void {

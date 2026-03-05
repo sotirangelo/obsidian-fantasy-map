@@ -1,7 +1,7 @@
 import { App, PluginSettingTab } from "obsidian";
 import { mount, unmount } from "svelte";
 import type FantasyMapPlugin from "./main";
-import { deleteLayerFile } from "./layers";
+import { deleteLayerFile } from "./map/layers";
 import SettingsPanel from "./components/SettingsPanel.svelte";
 
 export class FantasyMapSettingTab extends PluginSettingTab {
