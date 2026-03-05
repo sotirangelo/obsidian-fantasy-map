@@ -221,6 +221,38 @@
   margin-bottom: 16px;
 }
 
+/* Scale bar */
+.fantasy-map-scale-bar {
+  background: none;
+  padding: 6px 10px;
+  font-size: 0.8em;
+  line-height: 1.4;
+  color: var(--text-normal);
+  pointer-events: none;
+}
+
+.fantasy-map-scale-bar .scale-bar-title {
+  font-size: 0.75em;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+.fantasy-map-scale-bar .scale-bar-line {
+  height: 0;
+  border-bottom: 2px solid var(--text-normal);
+  border-left: 2px solid var(--text-normal);
+  border-right: 2px solid var(--text-normal);
+  padding-top: 4px;
+}
+
+.fantasy-map-scale-bar .scale-bar-label {
+  text-align: center;
+  margin-top: 2px;
+  font-weight: 500;
+}
+
 /* Custom emoji marker icon */
 .fantasy-map-marker-icon {
   background: none;
