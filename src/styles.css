@@ -1,5 +1,4 @@
 @import "../node_modules/leaflet/dist/leaflet.css";
-@import "../node_modules/@geoman-io/leaflet-geoman-free/dist/leaflet-geoman.css";
 
 .fantasy-map-wrapper {
   height: 100%;
@@ -231,25 +230,15 @@
   flex: 1;
 }
 
-/* Right toolbar buttons */
-.fantasy-map-toolbar-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: max-content;
-  height: max-content;
-  padding: 0.3rem;
-  cursor: pointer;
-  background: var(--background-primary);
-  color: var(--text-normal);
-}
-
-.fantasy-map-toolbar-btn:hover {
-  background: var(--interactive-hover);
-}
-
-.fantasy-map-toolbar-btn svg {
-  display: block;
+/* Map controls overlay */
+.fantasy-map-controls-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1000;
+  pointer-events: none;
 }
 
 .leaflet-container {
