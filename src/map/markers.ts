@@ -1,40 +1,21 @@
 import * as L from "leaflet";
-import type { MarkerFeature } from "../types";
-import {
-  MARKER_ICON_SIZE,
-  MARKER_ICON_ANCHOR,
-  MARKER_POPUP_ANCHOR,
-} from "../config";
+import type { MarkerProperties } from "../types";
+import { DEFAULT_MARKER_COLOR } from "../config";
 
-// esbuild converts these to data URLs
-import iconUrl from "leaflet/dist/images/marker-icon.png";
-import iconRetinaUrl from "leaflet/dist/images/marker-icon-2x.png";
-import shadowUrl from "leaflet/dist/images/marker-shadow.png";
-
-export function fixLeafletDefaultIcons(): void {
-  L.Icon.Default.mergeOptions({
-    iconUrl,
-    iconRetinaUrl,
-    shadowUrl,
-  });
-}
+const DOT_SIZE = 12;
 
 export function createMarkerFromFeature(
-  feature: MarkerFeature,
+  props: MarkerProperties,
   latlng: L.LatLng,
 ): L.Marker {
-  const props = feature.properties;
-  const markerOptions: L.MarkerOptions = { draggable: true };
+  const color = props.color || DEFAULT_MARKER_COLOR;
 
-  if (props.icon) {
-    markerOptions.icon = L.divIcon({
-      className: "fantasy-map-marker-icon",
-      html: `<span class="marker-emoji">${props.icon}</span>`,
-      iconSize: MARKER_ICON_SIZE,
-      iconAnchor: MARKER_ICON_ANCHOR,
-      popupAnchor: MARKER_POPUP_ANCHOR,
-    });
-  }
+  const icon = L.divIcon({
+    className: "fantasy-map-dot-icon",
+    html: `<span class="marker-dot" style="background:${color};"></span>`,
+    iconSize: [DOT_SIZE, DOT_SIZE],
+    iconAnchor: [DOT_SIZE / 2, DOT_SIZE / 2],
+  });
 
-  return L.marker(latlng, markerOptions);
+  return L.marker(latlng, { draggable: true, icon });
 }

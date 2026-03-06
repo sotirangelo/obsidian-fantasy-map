@@ -69,13 +69,6 @@
     ),
   );
 
-  let icon = $state(
-    untrack(() =>
-      featureType === "marker"
-        ? (initialProperties as MarkerProperties).icon
-        : "",
-    ),
-  );
   let color = $state(
     untrack(() => (featureType === "polygon" ? initialProperties.color : "")),
   );
@@ -108,7 +101,6 @@
       onSubmit(
         {
           ...base,
-          icon,
           color: (initialProperties as MarkerProperties).color,
         } as MarkerProperties,
         selectedLayerId,
@@ -200,25 +192,6 @@
     />
   </div>
 </div>
-
-{#if featureType === "marker"}
-  <div class="setting-item">
-    <div class="setting-item-info">
-      <div class="setting-item-name">Icon</div>
-      <div class="setting-item-description">
-        Emoji or short text for the marker
-      </div>
-    </div>
-    <div class="setting-item-control">
-      <input
-        type="text"
-        placeholder="🏰"
-        value={icon}
-        oninput={(e) => (icon = e.currentTarget.value)}
-      />
-    </div>
-  </div>
-{/if}
 
 {#if featureType === "polygon"}
   <div class="setting-item">

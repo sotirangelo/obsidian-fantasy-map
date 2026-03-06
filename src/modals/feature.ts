@@ -14,7 +14,6 @@ function defaultProperties(featureType: FeatureType): FeatureProperties {
       id: window.crypto.randomUUID(),
       name: "",
       note: "",
-      icon: "",
       color: DEFAULT_MARKER_COLOR,
       description: "",
     } satisfies MarkerProperties;

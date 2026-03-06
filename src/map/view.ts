@@ -23,7 +23,7 @@ import type {
   SidebarState,
 } from "../types";
 import { loadConfiguredLayers } from "./layers";
-import { createMarkerFromFeature, fixLeafletDefaultIcons } from "./markers";
+import { createMarkerFromFeature } from "./markers";
 import {
   FeatureModal,
   DeleteConfirmModal,
@@ -92,7 +92,6 @@ export class FantasyMapView extends ItemView {
   }
 
   async onOpen(): Promise<void> {
-    fixLeafletDefaultIcons();
     await this.renderMap();
   }
 
@@ -442,6 +441,12 @@ export class FantasyMapView extends ItemView {
           feature.geometry.type === "Polygon" ||
           feature.geometry.type === "MultiPolygon"
         ) {
+          const props = feature.properties as PolygonProperties;
+          leafletFeature.bindTooltip(props.name, {
+            permanent: true,
+            direction: "center",
+            className: "fantasy-map-name-tooltip",
+          });
           this.attachPolygonInteraction(
             feature as PolygonFeature,
             leafletFeature as L.Polygon,
@@ -507,7 +512,14 @@ export class FantasyMapView extends ItemView {
     latlng: L.LatLng,
     layer: LoadedLayer,
   ): L.Marker {
-    const marker = createMarkerFromFeature(feature, latlng);
+    const marker = createMarkerFromFeature(feature.properties, latlng);
+
+    marker.bindTooltip(feature.properties.name, {
+      permanent: true,
+      direction: "top",
+      offset: [0, -8],
+      className: "fantasy-map-name-tooltip",
+    });
 
     marker.on("click", () => {
       this.selectFeature(

@@ -44,7 +44,6 @@ export interface MarkerProperties {
   id: string;
   name: string;
   note: string;
-  icon: string;
   color: string;
   description: string;
   localMapId?: string;
