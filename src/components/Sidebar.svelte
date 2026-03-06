@@ -1,19 +1,5 @@
 <script lang="ts">
-  import type { MarkerProperties, PolygonProperties } from "../types";
-
-  interface SidebarState {
-    featureType: "marker" | "polygon";
-    properties: MarkerProperties | PolygonProperties;
-    onOpenNote: (path: string) => void;
-    onReadNote: (path: string) => Promise<string | null>;
-    onRenderMarkdown: (markdown: string, el: HTMLElement) => void;
-    onSearchTag: (tag: string) => void;
-    onEdit: () => void;
-    onDelete: () => void;
-    onOpenLocalMap?: () => void;
-    onLinkLocalMap?: () => void;
-    relations?: { featureId: string; featureName: string; label: string }[];
-  }
+  import type { MarkerProperties, SidebarState } from "../types";
 
   interface Props {
     registerUpdate: (fn: (state: SidebarState | null) => void) => void;

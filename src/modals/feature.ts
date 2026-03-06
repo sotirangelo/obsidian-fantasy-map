@@ -5,11 +5,35 @@ import { DEFAULT_MARKER_COLOR } from "../config";
 import { NoteSuggestModal, TagSuggestModal, FeatureSuggestModal } from "./link-note";
 import FeatureForm from "../components/FeatureForm.svelte";
 
-export class PolygonModal extends Modal {
-  private properties: PolygonProperties;
+type FeatureType = "marker" | "polygon";
+type FeatureProperties = MarkerProperties | PolygonProperties;
+
+function defaultProperties(featureType: FeatureType): FeatureProperties {
+  if (featureType === "marker") {
+    return {
+      id: crypto.randomUUID(),
+      name: "",
+      note: "",
+      icon: "",
+      color: DEFAULT_MARKER_COLOR,
+      description: "",
+    } satisfies MarkerProperties;
+  }
+  return {
+    id: crypto.randomUUID(),
+    name: "",
+    note: "",
+    color: DEFAULT_MARKER_COLOR,
+    description: "",
+  } satisfies PolygonProperties;
+}
+
+export class FeatureModal extends Modal {
+  private featureType: FeatureType;
+  private properties: FeatureProperties;
   private layerOptions: { id: string; name: string }[];
   private selectedLayerId: string;
-  private onSubmit: (properties: PolygonProperties, layerId: string) => void;
+  private onSubmit: (properties: FeatureProperties, layerId: string) => void;
   private onLinkLocalMap?: (featureId: string, cb: (mapId: string) => void) => void;
   private allFeatures: { id: string; name: string }[];
   private isEdit: boolean;
@@ -17,24 +41,18 @@ export class PolygonModal extends Modal {
 
   constructor(
     app: App,
-    existingProperties: PolygonProperties | null,
+    featureType: FeatureType,
+    existingProperties: FeatureProperties | null,
     layerOptions: { id: string; name: string }[],
     defaultLayerId: string,
-    onSubmit: (properties: PolygonProperties, layerId: string) => void,
+    onSubmit: (properties: FeatureProperties, layerId: string) => void,
     onLinkLocalMap?: (featureId: string, cb: (mapId: string) => void) => void,
     allFeatures: { id: string; name: string }[] = [],
   ) {
     super(app);
+    this.featureType = featureType;
     this.isEdit = existingProperties !== null;
-    this.properties = existingProperties
-      ? { ...existingProperties }
-      : {
-          id: crypto.randomUUID(),
-          name: "",
-          note: "",
-          color: DEFAULT_MARKER_COLOR,
-          description: "",
-        };
+    this.properties = existingProperties ? { ...existingProperties } : defaultProperties(featureType);
     this.layerOptions = layerOptions;
     this.selectedLayerId = defaultLayerId || (layerOptions[0]?.id ?? "");
     this.onSubmit = onSubmit;
@@ -46,7 +64,7 @@ export class PolygonModal extends Modal {
     this.mountedForm = mount(FeatureForm, {
       target: this.contentEl,
       props: {
-        featureType: "polygon" as const,
+        featureType: this.featureType,
         initialProperties: this.properties,
         layerOptions: this.layerOptions,
         initialLayerId: this.selectedLayerId,
@@ -68,9 +86,9 @@ export class PolygonModal extends Modal {
             cb(feature.id, feature.name);
           }).open();
         },
-        onSubmit: (props: MarkerProperties | PolygonProperties, layerId: string) => {
+        onSubmit: (props: FeatureProperties, layerId: string) => {
           this.close();
-          this.onSubmit(props as PolygonProperties, layerId);
+          this.onSubmit(props, layerId);
         },
       },
     });

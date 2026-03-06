@@ -20,13 +20,13 @@ import type {
   MarkerProperties,
   PolygonProperties,
   ObsidianApp,
+  SidebarState,
 } from "../types";
 import { loadConfiguredLayers } from "./layers";
 import { createMarkerFromFeature, fixLeafletDefaultIcons } from "./markers";
 import {
-  MarkerModal,
+  FeatureModal,
   DeleteConfirmModal,
-  PolygonModal,
   LinkLocalMapModal,
   NameInputModal,
 } from "../modals";
@@ -40,20 +40,6 @@ import {
 import { CalibrationHandler } from "./calibration";
 import { MeasureHandler } from "./measure";
 import Sidebar from "../components/Sidebar.svelte";
-
-interface SidebarState {
-  featureType: "marker" | "polygon";
-  properties: MarkerProperties | PolygonProperties;
-  onOpenNote: (path: string) => void;
-  onReadNote: (path: string) => Promise<string | null>;
-  onRenderMarkdown: (markdown: string, el: HTMLElement) => void;
-  onSearchTag: (tag: string) => void;
-  onEdit: () => void;
-  onDelete: () => void;
-  onOpenLocalMap?: () => void;
-  onLinkLocalMap?: () => void;
-  relations?: { featureId: string; featureName: string; label: string }[];
-}
 
 export const FANTASY_MAP_VIEW = "fantasy-map-view";
 
@@ -477,6 +463,51 @@ export class FantasyMapView extends ItemView {
 
   // --- Feature Interaction ---
 
+  private buildSidebarState(
+    featureType: "marker" | "polygon",
+    props: MarkerProperties | PolygonProperties,
+    feature: MapFeature,
+    layer: LoadedLayer,
+  ): SidebarState {
+    return {
+      featureType,
+      properties: props,
+      relations: this.resolveRelations(props),
+      onOpenNote: (path: string) => {
+        void this.app.workspace.openLinkText(path, "", false);
+      },
+      onReadNote: async (path: string) => {
+        const file = this.app.vault.getFileByPath(`${path}.md`);
+        if (!file) return null;
+        return this.app.vault.cachedRead(file);
+      },
+      onRenderMarkdown: (markdown: string, el: HTMLElement) => {
+        el.empty();
+        void MarkdownRenderer.render(this.app, markdown, el, "", this);
+      },
+      onSearchTag: (tag: string) => {
+        const search = (
+          this.app as ObsidianApp
+        ).internalPlugins?.getPluginById?.("global-search")?.instance;
+        search?.openGlobalSearch(`tag:${tag}`);
+      },
+      onEdit: () => {
+        this.editFeature(featureType, props, layer);
+      },
+      onDelete: () => {
+        this.deleteFeature(props, layer);
+      },
+      onOpenLocalMap: props.localMapId
+        ? () => void this.plugin.openMap(props.localMapId!)
+        : undefined,
+      onLinkLocalMap: !props.localMapId
+        ? () => {
+            this.openLinkLocalMapModal(feature, layer);
+          }
+        : undefined,
+    };
+  }
+
   private createInteractiveMarker(
     feature: MarkerFeature,
     latlng: L.LatLng,
@@ -485,50 +516,8 @@ export class FantasyMapView extends ItemView {
     const marker = createMarkerFromFeature(feature, latlng);
 
     marker.on("click", () => {
-      const props = feature.properties;
       this.selectFeature(
-        {
-          featureType: "marker",
-          properties: props,
-          relations: this.resolveRelations(props),
-          onOpenNote: (path: string) => {
-            void this.app.workspace.openLinkText(path, "", false);
-          },
-          onReadNote: async (path: string) => {
-            const file = this.app.vault.getFileByPath(`${path}.md`);
-            if (!file) return null;
-            return this.app.vault.cachedRead(file);
-          },
-          onRenderMarkdown: (markdown: string, el: HTMLElement) => {
-            el.empty();
-            void MarkdownRenderer.render(
-              this.app,
-              markdown,
-              el,
-              "",
-              this,
-            );
-          },
-          onSearchTag: (tag: string) => {
-            const search = (this.app as ObsidianApp).internalPlugins?.getPluginById?.("global-search")?.instance;
-            search?.openGlobalSearch(`tag:${tag}`);
-          },
-          onEdit: () => {
-            this.editMarker(props, layer);
-          },
-          onDelete: () => {
-            this.deleteFeature(props, layer);
-          },
-          onOpenLocalMap: () =>
-            props.localMapId
-              ? void this.plugin.openMap(props.localMapId)
-              : undefined,
-          onLinkLocalMap: !props.localMapId
-            ? () => {
-                this.openLinkLocalMapModal(feature as MapFeature, layer);
-              }
-            : undefined,
-        },
+        this.buildSidebarState("marker", feature.properties, feature, layer),
         marker,
       );
     });
@@ -555,53 +544,25 @@ export class FantasyMapView extends ItemView {
   ): void {
     leafletPolygon.on("click", (e: L.LeafletMouseEvent) => {
       L.DomEvent.stopPropagation(e);
-      const props = feature.properties;
       this.selectFeature(
-        {
-          featureType: "polygon",
-          properties: props,
-          relations: this.resolveRelations(props),
-          onOpenNote: (path: string) => {
-            void this.app.workspace.openLinkText(path, "", false);
-          },
-          onReadNote: async (path: string) => {
-            const file = this.app.vault.getFileByPath(`${path}.md`);
-            if (!file) return null;
-            return this.app.vault.cachedRead(file);
-          },
-          onRenderMarkdown: (markdown: string, el: HTMLElement) => {
-            el.empty();
-            void MarkdownRenderer.render(
-              this.app,
-              markdown,
-              el,
-              "",
-              this,
-            );
-          },
-          onSearchTag: (tag: string) => {
-            const search = (this.app as ObsidianApp).internalPlugins?.getPluginById?.("global-search")?.instance;
-            search?.openGlobalSearch(`tag:${tag}`);
-          },
-          onEdit: () => {
-            this.editPolygon(props, layer);
-          },
-          onDelete: () => {
-            this.deleteFeature(props, layer);
-          },
-          onOpenLocalMap: () =>
-            props.localMapId
-              ? void this.plugin.openMap(props.localMapId)
-              : undefined,
-          onLinkLocalMap: !props.localMapId
-            ? () => {
-                this.openLinkLocalMapModal(feature as MapFeature, layer);
-              }
-            : undefined,
-        },
+        this.buildSidebarState("polygon", feature.properties, feature, layer),
         leafletPolygon,
       );
     });
+  }
+
+  // --- Layer Options Helpers ---
+
+  private getLayerOptions(): { id: string; name: string }[] {
+    return this.layers.map((l) => ({ id: l.config.id, name: l.config.name }));
+  }
+
+  private resolveDefaultLayerId(
+    layerOptions: { id: string; name: string }[],
+  ): string {
+    const config = this.getMapConfig();
+    const defaultLayerId = config?.defaultLayerId ?? "";
+    return defaultLayerId || (layerOptions[0]?.id ?? "");
   }
 
   // --- Add Marker ---
@@ -622,11 +583,7 @@ export class FantasyMapView extends ItemView {
   }
 
   private openAddMarkerModal(latlng: L.LatLng): void {
-    const config = this.getMapConfig();
-    const layerOptions = this.layers.map((l) => ({
-      id: l.config.id,
-      name: l.config.name,
-    }));
+    const layerOptions = this.getLayerOptions();
 
     if (layerOptions.length === 0) {
       new Notice(
@@ -635,24 +592,22 @@ export class FantasyMapView extends ItemView {
       return;
     }
 
-    let defaultLayerId = config?.defaultLayerId ?? "";
-    if (!defaultLayerId && layerOptions.length > 0) {
-      defaultLayerId = layerOptions[0].id;
-    }
+    const defaultLayerId = this.resolveDefaultLayerId(layerOptions);
 
-    const modal = new MarkerModal(
+    new FeatureModal(
       this.app,
+      "marker",
       null,
       layerOptions,
       defaultLayerId,
-      (properties: MarkerProperties, selectedLayerId: string) => {
+      (properties, selectedLayerId) => {
         const feature: MarkerFeature = {
           type: "Feature",
           geometry: {
             type: "Point",
             coordinates: [latlng.lng, latlng.lat],
           },
-          properties,
+          properties: properties as MarkerProperties,
         };
 
         const layer = this.layers.find((l) => l.config.id === selectedLayerId);
@@ -675,18 +630,13 @@ export class FantasyMapView extends ItemView {
           }
         : undefined,
       this.getAllFeatures(),
-    );
-    modal.open();
+    ).open();
   }
 
   // --- Add Polygon ---
 
   private openAddPolygonModal(polygon: L.Polygon): void {
-    const config = this.getMapConfig();
-    const layerOptions = this.layers.map((l) => ({
-      id: l.config.id,
-      name: l.config.name,
-    }));
+    const layerOptions = this.getLayerOptions();
 
     if (layerOptions.length === 0) {
       new Notice(
@@ -695,17 +645,15 @@ export class FantasyMapView extends ItemView {
       return;
     }
 
-    let defaultLayerId = config?.defaultLayerId ?? "";
-    if (!defaultLayerId && layerOptions.length > 0) {
-      defaultLayerId = layerOptions[0].id;
-    }
+    const defaultLayerId = this.resolveDefaultLayerId(layerOptions);
 
-    const modal = new PolygonModal(
+    new FeatureModal(
       this.app,
+      "polygon",
       null,
       layerOptions,
       defaultLayerId,
-      (properties: PolygonProperties, selectedLayerId: string) => {
+      (properties, selectedLayerId) => {
         const latLngs = polygon.getLatLngs() as L.LatLng[][];
         const coordinates: [number, number][][] = latLngs.map((ring) =>
           ring.map((ll) => [ll.lng, ll.lat] as [number, number]),
@@ -727,7 +675,7 @@ export class FantasyMapView extends ItemView {
             type: "Polygon",
             coordinates,
           } as Polygon,
-          properties,
+          properties: properties as PolygonProperties,
         };
 
         const layer = this.layers.find((l) => l.config.id === selectedLayerId);
@@ -746,26 +694,26 @@ export class FantasyMapView extends ItemView {
           }
         : undefined,
       this.getAllFeatures(),
-    );
-    modal.open();
+    ).open();
   }
 
   // --- Edit / Delete ---
 
-  private editMarker(properties: MarkerProperties, layer: LoadedLayer): void {
-    const layerOptions = this.layers.map((l) => ({
-      id: l.config.id,
-      name: l.config.name,
-    }));
-
-    const modal = new MarkerModal(
+  private editFeature(
+    featureType: "marker" | "polygon",
+    properties: MarkerProperties | PolygonProperties,
+    layer: LoadedLayer,
+  ): void {
+    const layerOptions = this.getLayerOptions();
+    new FeatureModal(
       this.app,
+      featureType,
       properties,
       layerOptions,
       layer.config.id,
-      (updatedProperties: MarkerProperties) => {
+      (updatedProperties) => {
         const featureIndex = layer.data.features.findIndex(
-          (f) => (f.properties as MarkerProperties).id === properties.id,
+          (f) => (f.properties as { id: string }).id === properties.id,
         );
         if (featureIndex >= 0) {
           layer.data.features[featureIndex].properties = updatedProperties;
@@ -775,35 +723,7 @@ export class FantasyMapView extends ItemView {
       },
       undefined,
       this.getAllFeatures(properties.id),
-    );
-    modal.open();
-  }
-
-  private editPolygon(properties: PolygonProperties, layer: LoadedLayer): void {
-    const layerOptions = this.layers.map((l) => ({
-      id: l.config.id,
-      name: l.config.name,
-    }));
-
-    const modal = new PolygonModal(
-      this.app,
-      properties,
-      layerOptions,
-      layer.config.id,
-      (updatedProperties: PolygonProperties) => {
-        const featureIndex = layer.data.features.findIndex(
-          (f) => (f.properties as PolygonProperties).id === properties.id,
-        );
-        if (featureIndex >= 0) {
-          layer.data.features[featureIndex].properties = updatedProperties;
-          void this.saveLayer(layer);
-          this.refreshMapLayers();
-        }
-      },
-      undefined,
-      this.getAllFeatures(properties.id),
-    );
-    modal.open();
+    ).open();
   }
 
   private deleteFeature(
@@ -940,7 +860,9 @@ export class FantasyMapView extends ItemView {
   ): { featureId: string; featureName: string; label: string }[] {
     return (props.relations ?? []).map((r) => ({
       featureId: r.featureId,
-      featureName: this.getAllFeatures().find((f) => f.id === r.featureId)?.name ?? r.featureId,
+      featureName:
+        this.getAllFeatures().find((f) => f.id === r.featureId)?.name ??
+        r.featureId,
       label: r.label,
     }));
   }
@@ -999,7 +921,7 @@ export class FantasyMapView extends ItemView {
         if (relatedLayer instanceof L.Marker) {
           latlng = relatedLayer.getLatLng();
         } else if (relatedLayer instanceof L.Polygon) {
-          latlng = (relatedLayer).getBounds().getCenter();
+          latlng = relatedLayer.getBounds().getCenter();
         } else {
           continue;
         }

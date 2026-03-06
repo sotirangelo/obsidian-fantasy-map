@@ -12,7 +12,6 @@ import iconRetinaUrl from "leaflet/dist/images/marker-icon-2x.png";
 import shadowUrl from "leaflet/dist/images/marker-shadow.png";
 
 export function fixLeafletDefaultIcons(): void {
-  // delete (L.Icon.Default.prototype as unknown)._getIconUrl;
   L.Icon.Default.mergeOptions({
     iconUrl,
     iconRetinaUrl,

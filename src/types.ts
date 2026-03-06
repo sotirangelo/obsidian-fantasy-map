@@ -76,3 +76,17 @@ export interface LoadedLayer {
   data: MapFeatureCollection;
   leafletLayer: L.GeoJSON | null;
 }
+
+export interface SidebarState {
+  featureType: "marker" | "polygon";
+  properties: MarkerProperties | PolygonProperties;
+  onOpenNote: (path: string) => void;
+  onReadNote: (path: string) => Promise<string | null>;
+  onRenderMarkdown: (markdown: string, el: HTMLElement) => void;
+  onSearchTag: (tag: string) => void;
+  onEdit: () => void;
+  onDelete: () => void;
+  onOpenLocalMap?: () => void;
+  onLinkLocalMap?: () => void;
+  relations?: { featureId: string; featureName: string; label: string }[];
+}
