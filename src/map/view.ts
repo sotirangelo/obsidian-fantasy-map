@@ -30,17 +30,14 @@ import {
   LinkLocalMapModal,
   NameInputModal,
 } from "../modals";
-import { MAP_CONFIG, GEOMAN_CONFIG } from "../config";
+import { MAP_CONFIG } from "../config";
 import { pickNiceDistance } from "./scales";
-import {
-  createToolbarButton,
-  createBackButton,
-  createScaleBar,
-} from "./controls";
+import { createScaleBar } from "./controls";
 import { CalibrationHandler } from "./calibration";
 import { MeasureHandler } from "./measure";
 import { SelectionManager } from "./selection";
 import Sidebar from "../components/Sidebar.svelte";
+import MapControls from "../components/MapControls.svelte";
 
 export const FANTASY_MAP_VIEW = "fantasy-map-view";
 
@@ -54,6 +51,8 @@ export class FantasyMapView extends ItemView {
   private layerControl: L.Control.Layers | null = null;
   private sidebarEl: HTMLDivElement | null = null;
   private sidebarComponent: ReturnType<typeof mount> | null = null;
+  private controlsEl: HTMLDivElement | null = null;
+  private controlsComponent: ReturnType<typeof mount> | null = null;
   private updateSidebar: ((state: SidebarState | null) => void) | null = null;
   private scaleBarControl: L.Control | null = null;
   private updateScaleBar: (() => void) | null = null;
@@ -171,8 +170,13 @@ export class FantasyMapView extends ItemView {
       void unmount(this.sidebarComponent);
       this.sidebarComponent = null;
     }
+    if (this.controlsComponent) {
+      void unmount(this.controlsComponent);
+      this.controlsComponent = null;
+    }
     this.updateSidebar = null;
     this.sidebarEl = null;
+    this.controlsEl = null;
     this.layers = [];
     this.layerControl = null;
     this.scaleBarControl = null;
@@ -237,15 +241,12 @@ export class FantasyMapView extends ItemView {
       ...MAP_CONFIG,
     });
 
-    L.control.zoom({ position: "bottomright" }).addTo(this.map);
     L.imageOverlay(imageUrl, bounds).addTo(this.map);
     this.map.fitBounds(bounds);
 
     this.layerControl = L.control
       .layers({}, {}, { position: "topright" })
       .addTo(this.map);
-
-    this.map.pm.addControls(GEOMAN_CONFIG);
 
     // Initialize calibration and measure handlers
     this.calibration = new CalibrationHandler(
@@ -273,43 +274,29 @@ export class FantasyMapView extends ItemView {
     this.measure = new MeasureHandler(this.map, () => this.getMapConfig());
     this.selection = new SelectionManager(this.map);
 
-    // Toolbar controls
-    createToolbarButton(this.map, {
-      position: "topright",
-      className: "fantasy-map-scale-btn",
-      title: "Set Scale",
-      icon: "pencil-ruler",
-      onClick: () => this.calibration?.start(),
-    });
+    // Mount Svelte map controls
+    const parentConfig = config.parentMapId
+      ? this.plugin.settings.maps.find((m) => m.id === config.parentMapId)
+      : undefined;
 
-    createToolbarButton(this.map, {
-      position: "topright",
-      className: "fantasy-map-measure-btn",
-      title: "Measure Distance",
-      icon: "ruler",
-      onClick: () => this.measure?.start(),
+    this.controlsEl = this.mapContainerEl.createDiv({
+      cls: "fantasy-map-controls-overlay",
     });
-
-    createToolbarButton(this.map, {
-      position: "topright",
-      className: "fantasy-map-add-layer-btn",
-      title: "Add Layer",
-      icon: "layers",
-      onClick: () => {
-        this.promptAddLayer(config);
+    L.DomEvent.disableClickPropagation(this.controlsEl);
+    this.controlsComponent = mount(MapControls, {
+      target: this.controlsEl,
+      props: {
+        map: this.map,
+        onSetScale: () => this.calibration?.start(),
+        onMeasure: () => this.measure?.start(),
+        onAddLayer: () => this.promptAddLayer(config),
+        parentName:
+          parentConfig?.name ?? (config.parentMapId ? "Parent Map" : undefined),
+        onNavigateBack: config.parentMapId
+          ? () => void this.plugin.openMap(config.parentMapId!)
+          : undefined,
       },
     });
-
-    // Parent map navigation (for local maps)
-    if (config.parentMapId) {
-      const parentConfig = this.plugin.settings.maps.find(
-        (m) => m.id === config.parentMapId,
-      );
-      const parentName = parentConfig?.name ?? "Parent Map";
-      createBackButton(this.map, parentName, () => {
-        void this.plugin.openMap(config.parentMapId!);
-      });
-    }
 
     // Scale bar (if scale already configured)
     if (config.scale) {
@@ -317,7 +304,7 @@ export class FantasyMapView extends ItemView {
     }
 
     // When a shape is created via the Geoman toolbar
-    this.map.on("pm:create", (e: { shape: string; layer: L.Layer }) => {
+    this.map.on("pm:create", (e: { shape?: string; layer: L.Layer }) => {
       if (e.shape === "Marker") {
         const marker = e.layer as L.Marker;
         const latlng = marker.getLatLng();
