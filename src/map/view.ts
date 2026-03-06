@@ -715,11 +715,26 @@ export class FantasyMapView extends ItemView {
       properties,
       layerOptions,
       layer.config.id,
-      (updatedProperties) => {
+      (updatedProperties, selectedLayerId) => {
         const featureIndex = layer.data.features.findIndex(
           (f) => (f.properties as { id: string }).id === properties.id,
         );
-        if (featureIndex >= 0) {
+        if (featureIndex < 0) return;
+
+        if (selectedLayerId && selectedLayerId !== layer.config.id) {
+          // Move feature to a different layer
+          const targetLayer = this.layers.find(
+            (l) => l.config.id === selectedLayerId,
+          );
+          if (targetLayer) {
+            const [feature] = layer.data.features.splice(featureIndex, 1);
+            feature.properties = updatedProperties;
+            targetLayer.data.features.push(feature);
+            void this.saveLayer(layer);
+            void this.saveLayer(targetLayer);
+            this.refreshMapLayers();
+          }
+        } else {
           layer.data.features[featureIndex].properties = updatedProperties;
           void this.saveLayer(layer);
           this.refreshMapLayers();

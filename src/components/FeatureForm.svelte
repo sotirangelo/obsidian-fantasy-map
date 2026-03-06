@@ -359,12 +359,12 @@
   </div>
 {/if}
 
-{#if !isEdit && layerOptions.length > 0}
+{#if layerOptions.length > 0}
   <div class="setting-item">
     <div class="setting-item-info">
       <div class="setting-item-name">Layer</div>
       <div class="setting-item-description">
-        Which layer to add this {label.toLowerCase()} to
+        {isEdit ? `Move this ${label.toLowerCase()} to a different layer` : `Which layer to add this ${label.toLowerCase()} to`}
       </div>
     </div>
     <div class="setting-item-control">
