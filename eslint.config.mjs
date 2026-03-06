@@ -24,6 +24,7 @@ export default defineConfig(
     rules: {
       "obsidianmd/ui/sentence-case": "off",
       "@typescript-eslint/no-non-null-assertion": "off",
+      "@typescript-eslint/no-confusing-void-expression": "off",
     },
   },
   globalIgnores([
