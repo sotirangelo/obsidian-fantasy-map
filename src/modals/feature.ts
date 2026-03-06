@@ -11,7 +11,7 @@ type FeatureProperties = MarkerProperties | PolygonProperties;
 function defaultProperties(featureType: FeatureType): FeatureProperties {
   if (featureType === "marker") {
     return {
-      id: crypto.randomUUID(),
+      id: window.crypto.randomUUID(),
       name: "",
       note: "",
       icon: "",
@@ -20,7 +20,7 @@ function defaultProperties(featureType: FeatureType): FeatureProperties {
     } satisfies MarkerProperties;
   }
   return {
-    id: crypto.randomUUID(),
+    id: window.crypto.randomUUID(),
     name: "",
     note: "",
     color: DEFAULT_MARKER_COLOR,

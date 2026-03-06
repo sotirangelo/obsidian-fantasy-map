@@ -44,7 +44,7 @@ export default class FantasyMapPlugin extends Plugin {
   private openCreateMapModal(): void {
     new CreateMapModal(this.app, (name: string, imagePath: string) => {
       const newMap = {
-        id: crypto.randomUUID(),
+        id: window.crypto.randomUUID(),
         name,
         mapImagePath: imagePath,
         layers: [],
@@ -111,7 +111,7 @@ export default class FantasyMapPlugin extends Plugin {
         maps: mapImagePath
           ? [
               {
-                id: crypto.randomUUID(),
+                id: window.crypto.randomUUID(),
                 name:
                   mapImagePath
                     .split("/")

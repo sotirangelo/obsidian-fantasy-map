@@ -31,7 +31,7 @@
       return;
     }
     error = "";
-    onSubmit(crypto.randomUUID(), true, newName.trim(), newImagePath.trim());
+    onSubmit(window.crypto.randomUUID(), true, newName.trim(), newImagePath.trim());
   }
 
   function handleSubmitExisting() {
