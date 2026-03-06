@@ -40,10 +40,17 @@
 
 <div class="fantasy-map-sidebar-content">
   {#if selected}
-    <div>
-      <h3 class="sidebar-marker-title">
-        {selected.properties.name}
-      </h3>
+    <div class="sidebar-sections">
+      <div>
+        <h3 class="sidebar-marker-title">
+          {selected.properties.name}
+        </h3>
+        {#if selected.properties.description}
+          <p class="sidebar-marker-description">
+            {selected.properties.description}
+          </p>
+        {/if}
+      </div>
       <div class="sidebar-buttons">
         <button class="sidebar-btn" onclick={() => selected?.onEdit()}>
           <span use:icon={"pencil"}></span>
@@ -56,16 +63,11 @@
           <span use:icon={"trash-2"}></span>
           Delete
         </button>
+        <button class="sidebar-btn" onclick={() => selected?.onAddRelation()}>
+          <span use:icon={"link"}></span>
+          Relation
+        </button>
       </div>
-      {#if selected.properties.description}
-        <p class="sidebar-marker-description">
-          {selected.properties.description}
-        </p>
-      {/if}
-      <button class="sidebar-btn" onclick={() => selected?.onAddRelation()}>
-        <span use:icon={"link"}></span>
-        Add Relation
-      </button>
       {#if selected.onOpenLocalMap}
         <button
           class="sidebar-btn"
