@@ -1,7 +1,6 @@
-import { Notice, Plugin } from "obsidian";
+import { Plugin } from "obsidian";
 import * as v from "valibot";
 import { FantasyMapView, FANTASY_MAP_VIEW } from "./map/view";
-import { FantasyMapSettingTab } from "./settings";
 import { MapPickerModal, CreateMapModal } from "./modals";
 import { DEFAULT_SETTINGS } from "./types";
 import type { FantasyMapSettings } from "./types";
@@ -38,7 +37,6 @@ export default class FantasyMapPlugin extends Plugin {
       },
     });
 
-    this.addSettingTab(new FantasyMapSettingTab(this.app, this));
   }
 
   private openCreateMapModal(): void {
@@ -58,18 +56,6 @@ export default class FantasyMapPlugin extends Plugin {
   private openMapPicker(): void {
     const { maps } = this.settings;
 
-    if (maps.length === 0) {
-      new Notice(
-        "No maps configured. Use the 'Create new map' command or go to Settings > Fantasy Map.",
-      );
-      return;
-    }
-
-    if (maps.length === 1) {
-      void this.openMap(maps[0].id);
-      return;
-    }
-
     // Build display list: local maps shown with parent context
     const parentMap = new Map(maps.map((m) => [m.id, m.name || m.id]));
     const displayMaps = maps.map((m) => ({
@@ -79,9 +65,16 @@ export default class FantasyMapPlugin extends Plugin {
         : m.name || m.id,
     }));
 
-    new MapPickerModal(this.app, displayMaps, (map) => {
-      void this.openMap(map.id);
-    }).open();
+    new MapPickerModal(
+      this.app,
+      displayMaps,
+      (map) => {
+        void this.openMap(map.id);
+      },
+      () => {
+        this.openCreateMapModal();
+      },
+    ).open();
   }
 
   async openMap(mapId: string): Promise<void> {

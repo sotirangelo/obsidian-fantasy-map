@@ -1,26 +1,52 @@
 import { App, FuzzySuggestModal } from "obsidian";
 import type { MapConfig } from "../types";
 
-export class MapPickerModal extends FuzzySuggestModal<MapConfig> {
-  private maps: MapConfig[];
-  private onChooseCallback: (map: MapConfig) => void;
+type PickerItem =
+  | { kind: "map"; map: MapConfig; displayName: string }
+  | { kind: "create" };
 
-  constructor(app: App, maps: MapConfig[], onChoose: (map: MapConfig) => void) {
+export class MapPickerModal extends FuzzySuggestModal<PickerItem> {
+  private items: PickerItem[];
+  private onChooseMap: (map: MapConfig) => void;
+  private onCreateMap: () => void;
+
+  constructor(
+    app: App,
+    maps: (MapConfig & { displayName?: string })[],
+    onChoose: (map: MapConfig) => void,
+    onCreate: () => void,
+  ) {
     super(app);
-    this.maps = maps;
-    this.onChooseCallback = onChoose;
-    this.setPlaceholder("Choose a map to open");
+    this.onChooseMap = onChoose;
+    this.onCreateMap = onCreate;
+    this.setPlaceholder("Choose a map or create a new one");
+
+    this.items = [
+      { kind: "create" },
+      ...maps.map((m) => ({
+        kind: "map" as const,
+        map: m,
+        displayName:
+          m.displayName ?? (m.name || m.mapImagePath || m.id),
+      })),
+    ];
   }
 
-  getItems(): MapConfig[] {
-    return this.maps;
+  getItems(): PickerItem[] {
+    return this.items;
   }
 
-  getItemText(item: MapConfig): string {
-    return (item as MapConfig & { displayName?: string }).displayName ?? (item.name || item.mapImagePath || item.id);
+  getItemText(item: PickerItem): string {
+    return item.kind === "create"
+      ? "+ Create new map"
+      : item.displayName;
   }
 
-  onChooseItem(item: MapConfig): void {
-    this.onChooseCallback(item);
+  onChooseItem(item: PickerItem): void {
+    if (item.kind === "create") {
+      this.onCreateMap();
+    } else {
+      this.onChooseMap(item.map);
+    }
   }
 }
