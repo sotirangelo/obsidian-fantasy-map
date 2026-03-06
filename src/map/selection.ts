@@ -14,6 +14,7 @@ export class SelectionManager {
   private selectionRing: L.CircleMarker | null = null;
   private relationHighlights: L.CircleMarker[] = [];
   private relationArrows: L.Layer[] = [];
+  private hiddenLayers: { layer: L.Layer; parent: L.GeoJSON }[] = [];
 
   constructor(map: L.Map) {
     this.map = map;
@@ -44,10 +45,17 @@ export class SelectionManager {
       })),
       layers,
     );
+
+    this.hideUnrelatedFeatures(featureId, state, layers);
   }
 
   clear(): void {
     this.clearRelationArrows();
+
+    for (const { layer, parent } of this.hiddenLayers) {
+      parent.addLayer(layer);
+    }
+    this.hiddenLayers = [];
 
     for (const ring of this.relationHighlights) {
       this.map.removeLayer(ring);
@@ -82,6 +90,37 @@ export class SelectionManager {
   updateDragPosition(marker: L.Marker): void {
     if (this.selectionRing && this.selectedLayer === marker) {
       this.selectionRing.setLatLng(marker.getLatLng());
+    }
+  }
+
+  private hideUnrelatedFeatures(
+    selectedId: string,
+    state: SidebarState,
+    layers: LoadedLayer[],
+  ): void {
+    const relatedIds = new Set<string>();
+    relatedIds.add(selectedId);
+    for (const rel of state.relations ?? []) {
+      relatedIds.add(rel.featureId);
+    }
+    for (const rel of state.incomingRelations ?? []) {
+      relatedIds.add(rel.featureId);
+    }
+
+    for (const loadedLayer of layers) {
+      if (!loadedLayer.leafletLayer) continue;
+      const toHide: L.Layer[] = [];
+      loadedLayer.leafletLayer.eachLayer((subLayer) => {
+        const f = (subLayer as unknown as { feature?: MapFeature }).feature;
+        const id = (f?.properties as { id?: string } | undefined)?.id;
+        if (id && !relatedIds.has(id)) {
+          toHide.push(subLayer);
+        }
+      });
+      for (const sub of toHide) {
+        loadedLayer.leafletLayer.removeLayer(sub);
+        this.hiddenLayers.push({ layer: sub, parent: loadedLayer.leafletLayer });
+      }
     }
   }
 
