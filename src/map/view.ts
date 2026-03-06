@@ -287,8 +287,14 @@ export class FantasyMapView extends ItemView {
       target: this.controlsEl,
       props: {
         map: this.map,
-        onSetScale: () => this.calibration?.start(),
-        onMeasure: () => this.measure?.start(),
+        onSetScale: (onDone: () => void) => {
+          this.calibration?.start(onDone);
+        },
+        onCancelSetScale: () => this.calibration?.cancel(),
+        onMeasure: (onDone: () => void) => {
+          this.measure?.start(onDone);
+        },
+        onCancelMeasure: () => this.measure?.cleanup(),
         onAddLayer: () => this.promptAddLayer(config),
         parentName:
           parentConfig?.name ?? (config.parentMapId ? "Parent Map" : undefined),

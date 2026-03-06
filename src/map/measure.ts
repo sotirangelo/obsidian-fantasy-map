@@ -11,14 +11,17 @@ export class MeasureHandler {
   private tempLayers: L.Layer[] = [];
   private resultPopup: L.Popup | null = null;
 
+  private onDone?: () => void;
+
   constructor(
     private map: L.Map,
     private getConfig: () => MapConfig | undefined,
   ) {}
 
-  start(): void {
+  start(onDone?: () => void): void {
     this.clearLayers();
     this.mode = "point1";
+    this.onDone = onDone;
     this.map.getContainer().classList.add("is-measuring");
     new Notice("Click the first point to measure from");
   }
@@ -55,6 +58,7 @@ export class MeasureHandler {
 
       this.mode = "off";
       this.map.getContainer().classList.remove("is-measuring");
+      this.onDone?.();
 
       const pxDist = pixelDistance([p1.lat, p1.lng], [latlng.lat, latlng.lng]);
 
@@ -93,6 +97,7 @@ export class MeasureHandler {
     this.clearLayers();
     this.mode = "off";
     this.point1 = null;
+    this.onDone?.();
   }
 
   private clearLayers(): void {

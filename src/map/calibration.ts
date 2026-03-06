@@ -10,6 +10,8 @@ export class CalibrationHandler {
   private point1: L.LatLng | null = null;
   private tempLayers: L.Layer[] = [];
 
+  private onDone?: () => void;
+
   constructor(
     private map: L.Map,
     private getApp: () => InstanceType<typeof import("obsidian").App>,
@@ -22,8 +24,9 @@ export class CalibrationHandler {
     ) => void,
   ) {}
 
-  start(): void {
+  start(onDone?: () => void): void {
     this.mode = "point1";
+    this.onDone = onDone;
     this.clearTempLayers();
     this.map.getContainer().classList.add("is-calibrating");
     new Notice("Click the first calibration point on the map");
@@ -59,6 +62,7 @@ export class CalibrationHandler {
 
       this.mode = "off";
       this.map.getContainer().classList.remove("is-calibrating");
+      this.onDone?.();
 
       const pxDist = pixelDistance([p1.lat, p1.lng], [latlng.lat, latlng.lng]);
 
@@ -75,10 +79,16 @@ export class CalibrationHandler {
     }
   }
 
-  cleanup(): void {
+  cancel(): void {
     this.clearTempLayers();
     this.mode = "off";
     this.point1 = null;
+    this.map.getContainer().classList.remove("is-calibrating");
+    this.onDone?.();
+  }
+
+  cleanup(): void {
+    this.cancel();
   }
 
   private clearTempLayers(): void {

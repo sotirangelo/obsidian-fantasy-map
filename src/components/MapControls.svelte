@@ -4,8 +4,10 @@
 
   interface Props {
     map: L.Map;
-    onSetScale: () => void;
-    onMeasure: () => void;
+    onSetScale: (onDone: () => void) => void;
+    onCancelSetScale: () => void;
+    onMeasure: (onDone: () => void) => void;
+    onCancelMeasure: () => void;
     onAddLayer: () => void;
     parentName?: string;
     onNavigateBack?: () => void;
@@ -14,7 +16,9 @@
   let {
     map,
     onSetScale,
+    onCancelSetScale,
     onMeasure,
+    onCancelMeasure,
     onAddLayer,
     parentName,
     onNavigateBack,
@@ -85,6 +89,34 @@
     }
   }
 
+  function resetActiveMode() {
+    activeMode = null;
+  }
+
+  function toggleSetScale() {
+    if (activeMode === "setScale") {
+      onCancelSetScale();
+      activeMode = null;
+    } else {
+      if (activeMode === "measure") onCancelMeasure();
+      disableAllModes();
+      activeMode = "setScale";
+      onSetScale(resetActiveMode);
+    }
+  }
+
+  function toggleMeasure() {
+    if (activeMode === "measure") {
+      onCancelMeasure();
+      activeMode = null;
+    } else {
+      if (activeMode === "setScale") onCancelSetScale();
+      disableAllModes();
+      activeMode = "measure";
+      onMeasure(resetActiveMode);
+    }
+  }
+
   // Listen for Geoman draw end to reset active state
   $effect(() => {
     const handler = () => {
@@ -113,13 +145,19 @@
 {/if}
 
 <div class="map-controls map-controls--bottom-right">
-  <button class="map-control-btn" aria-label="Set Scale" onclick={onSetScale}>
+  <button
+    class="map-control-btn"
+    class:map-control-btn--active={activeMode === "setScale"}
+    aria-label="Set Scale"
+    onclick={toggleSetScale}
+  >
     <span class="map-control-icon" use:icon={"pencil-ruler"}></span>
   </button>
   <button
     class="map-control-btn"
+    class:map-control-btn--active={activeMode === "measure"}
     aria-label="Measure Distance"
-    onclick={onMeasure}
+    onclick={toggleMeasure}
   >
     <span class="map-control-icon" use:icon={"ruler"}></span>
   </button>
