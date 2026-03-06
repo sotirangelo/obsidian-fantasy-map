@@ -119,7 +119,10 @@ export class SelectionManager {
       });
       for (const sub of toHide) {
         loadedLayer.leafletLayer.removeLayer(sub);
-        this.hiddenLayers.push({ layer: sub, parent: loadedLayer.leafletLayer });
+        this.hiddenLayers.push({
+          layer: sub,
+          parent: loadedLayer.leafletLayer,
+        });
       }
     }
   }
@@ -139,9 +142,8 @@ export class SelectionManager {
       const el = leafletLayer.getElement();
       el?.classList.add("fantasy-map-marker--selected");
     } else if (leafletLayer instanceof L.Polygon) {
-      const feature = (
-        leafletLayer as unknown as { feature?: PolygonFeature }
-      ).feature;
+      const feature = (leafletLayer as unknown as { feature?: PolygonFeature })
+        .feature;
       const fillColor = feature?.properties.color ?? "#3388ff";
       leafletLayer.setStyle({
         weight: 4,
@@ -153,10 +155,7 @@ export class SelectionManager {
     }
   }
 
-  private highlightRelations(
-    state: SidebarState,
-    layers: LoadedLayer[],
-  ): void {
+  private highlightRelations(state: SidebarState, layers: LoadedLayer[]): void {
     // Outgoing relations
     for (const rel of state.relations ?? []) {
       const relatedLayer = this.findLeafletLayerById(rel.featureId, layers);
@@ -176,7 +175,7 @@ export class SelectionManager {
       const latlng = this.getLayerLatLng(relatedLayer);
       if (!latlng) continue;
 
-      this.addRelationRing(latlng, "#8b5cf6");
+      this.addRelationRing(latlng, "#f59e0b");
     }
   }
 
@@ -263,11 +262,9 @@ export class SelectionManager {
       u2 * u2 * from.lng + 2 * u2 * arrowT * ctrlLng + arrowT * arrowT * to.lng;
 
     const tgLat =
-      2 * (1 - arrowT) * (ctrlLat - from.lat) +
-      2 * arrowT * (to.lat - ctrlLat);
+      2 * (1 - arrowT) * (ctrlLat - from.lat) + 2 * arrowT * (to.lat - ctrlLat);
     const tgLng =
-      2 * (1 - arrowT) * (ctrlLng - from.lng) +
-      2 * arrowT * (to.lng - ctrlLng);
+      2 * (1 - arrowT) * (ctrlLng - from.lng) + 2 * arrowT * (to.lng - ctrlLng);
     const angle = Math.atan2(tgLng, tgLat);
 
     const arrowSize = Math.sqrt(dLat * dLat + dLng * dLng) * 0.04;
