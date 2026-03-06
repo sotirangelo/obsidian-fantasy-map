@@ -39,13 +39,6 @@
   padding: 1em;
 }
 
-.sidebar-placeholder {
-  color: var(--text-muted);
-  font-size: 0.9em;
-  text-align: center;
-  margin-top: 2em;
-}
-
 .sidebar-marker-title {
   margin: 0 0 0.5em 0;
   font-size: 1.1em;
@@ -66,7 +59,7 @@
   text-decoration: underline;
   background: none;
   border: none;
-  padding: 0;
+  padding: 0 0.5rem;
   font: inherit;
   text-align: left;
 }
@@ -218,8 +211,8 @@
 .fantasy-map-tag-remove {
   background: none;
   border: none;
-  padding: 0 2px;
   cursor: pointer;
+  padding: 0 2px;
   color: var(--text-muted);
   font-size: 1em;
   line-height: 1;
@@ -449,4 +442,11 @@
 
 .fantasy-map-relation-label::before {
   display: none;
+}
+
+/* Form error */
+.fantasy-map-form-error {
+  color: var(--text-error);
+  font-size: 0.9em;
+  margin: 0.5em 0;
 }

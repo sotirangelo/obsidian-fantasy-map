@@ -46,11 +46,20 @@
 
 <div class="fantasy-map-sidebar-content">
   {#if selected}
-    <div class="sidebar-marker">
+    <div>
       <h3 class="sidebar-marker-title">
         {#if getIcon(selected)}{getIcon(selected)}{" "}{/if}{selected.properties
           .name}
       </h3>
+      <div class="sidebar-buttons">
+        <button class="sidebar-btn" onclick={() => selected?.onEdit()}
+          >Edit</button
+        >
+        <button
+          class="sidebar-btn sidebar-btn-danger"
+          onclick={() => selected?.onDelete()}>Delete</button
+        >
+      </div>
       {#if selected.properties.description}
         <p class="sidebar-marker-description">
           {selected.properties.description}
@@ -58,7 +67,7 @@
       {/if}
       {#if selected.onOpenLocalMap}
         <button
-          class="sidebar-btn sidebar-btn-local-map"
+          class="sidebar-btn"
           onclick={() => selected?.onOpenLocalMap?.()}
         >
           Open Local Map
@@ -112,8 +121,8 @@
             {#each selected.properties.tags as tag}
               <button
                 class="sidebar-tag"
-                onclick={() => selected?.onSearchTag(tag)}
-              >{tag}</button>
+                onclick={() => selected?.onSearchTag(tag)}>{tag}</button
+              >
             {/each}
           </div>
         </div>
@@ -134,16 +143,31 @@
           </div>
         </div>
       {/if}
-
-      <div class="sidebar-buttons">
-        <button class="sidebar-btn" onclick={() => selected?.onEdit()}
-          >Edit</button
-        >
-        <button
-          class="sidebar-btn sidebar-btn-danger"
-          onclick={() => selected?.onDelete()}>Delete</button
-        >
-      </div>
     </div>
   {/if}
 </div>
+
+<style>
+  .sidebar-relation-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .sidebar-relation-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.9em;
+  }
+
+  .sidebar-relation-name {
+    color: var(--text-normal);
+  }
+
+  .sidebar-relation-label {
+    color: var(--text-muted);
+    font-size: 0.85em;
+    font-style: italic;
+  }
+</style>
