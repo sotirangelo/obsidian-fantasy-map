@@ -87,17 +87,9 @@ export default class FantasyMapPlugin extends Plugin {
   async openMap(mapId: string): Promise<void> {
     const { workspace } = this.app;
 
-    // Check if this map is already open
+    // Reuse existing fantasy map leaf, or create one if none exists
     const leaves = workspace.getLeavesOfType(FANTASY_MAP_VIEW);
-    for (const leaf of leaves) {
-      const view = leaf.view as unknown as FantasyMapView;
-      if (view.mapId === mapId) {
-        await workspace.revealLeaf(leaf);
-        return;
-      }
-    }
-
-    const leaf = workspace.getLeaf("tab");
+    const leaf = leaves[0] ?? workspace.getLeaf("tab");
     await leaf.setViewState({
       type: FANTASY_MAP_VIEW,
       active: true,
