@@ -61,6 +61,7 @@ export class FantasyMapView extends ItemView {
   private selectedLayer: L.Layer | null = null;
   private selectionRing: L.CircleMarker | null = null;
   private relationHighlights: L.CircleMarker[] = [];
+  private relationArrows: L.Layer[] = [];
 
   constructor(leaf: WorkspaceLeaf, plugin: FantasyMapPlugin) {
     super(leaf);
@@ -867,6 +868,181 @@ export class FantasyMapView extends ItemView {
     }));
   }
 
+  private getFeatureLatLng(featureId: string): L.LatLng | null {
+    const layer = this.findLeafletLayerById(featureId);
+    if (!layer) return null;
+    if (layer instanceof L.Marker) return layer.getLatLng();
+    if (layer instanceof L.Polygon) return layer.getBounds().getCenter();
+    return null;
+  }
+
+  private getSelectedFeatureLatLng(leafletLayer: L.Layer): L.LatLng | null {
+    if (leafletLayer instanceof L.Marker) return leafletLayer.getLatLng();
+    if (leafletLayer instanceof L.Polygon)
+      return leafletLayer.getBounds().getCenter();
+    return null;
+  }
+
+  private findIncomingRelations(
+    featureId: string,
+  ): { featureId: string; featureName: string; label: string }[] {
+    const incoming: { featureId: string; featureName: string; label: string }[] =
+      [];
+    for (const layer of this.layers) {
+      for (const feature of layer.data.features) {
+        const props = feature.properties as MarkerProperties | PolygonProperties;
+        if (props.id === featureId) continue;
+        for (const rel of props.relations ?? []) {
+          if (rel.featureId === featureId) {
+            incoming.push({
+              featureId: props.id,
+              featureName: props.name,
+              label: rel.label,
+            });
+          }
+        }
+      }
+    }
+    return incoming;
+  }
+
+  private drawRelationArrows(
+    selectedId: string,
+    leafletLayer: L.Layer,
+    outgoing: { featureId: string; label: string }[],
+  ): void {
+    if (!this.map) return;
+
+    const from = this.getSelectedFeatureLatLng(leafletLayer);
+    if (!from) return;
+
+    const incoming = this.findIncomingRelations(selectedId);
+
+    // Draw outgoing arrows (selected -> related)
+    for (const rel of outgoing) {
+      const to = this.getFeatureLatLng(rel.featureId);
+      if (!to) continue;
+      this.addCurvedArrow(from, to, rel.label, "#f59e0b", true);
+    }
+
+    // Draw incoming arrows (related -> selected)
+    for (const rel of incoming) {
+      const relFrom = this.getFeatureLatLng(rel.featureId);
+      if (!relFrom) continue;
+      this.addCurvedArrow(relFrom, from, rel.label, "#8b5cf6", true);
+    }
+  }
+
+  private addCurvedArrow(
+    from: L.LatLng,
+    to: L.LatLng,
+    label: string,
+    color: string,
+    showArrowhead: boolean,
+  ): void {
+    if (!this.map) return;
+
+    // Compute curved path as quadratic bezier approximation
+    const midLat = (from.lat + to.lat) / 2;
+    const midLng = (from.lng + to.lng) / 2;
+    const dLat = to.lat - from.lat;
+    const dLng = to.lng - from.lng;
+
+    // Offset the control point perpendicular to the line
+    const offset = 0.2;
+    const ctrlLat = midLat + dLng * offset;
+    const ctrlLng = midLng - dLat * offset;
+
+    // Approximate bezier with polyline points
+    const points: L.LatLng[] = [];
+    const steps = 30;
+    for (let i = 0; i <= steps; i++) {
+      const t = i / steps;
+      const u = 1 - t;
+      const lat = u * u * from.lat + 2 * u * t * ctrlLat + t * t * to.lat;
+      const lng = u * u * from.lng + 2 * u * t * ctrlLng + t * t * to.lng;
+      points.push(L.latLng(lat, lng));
+    }
+
+    const line = L.polyline(points, {
+      color,
+      weight: 2.5,
+      opacity: 0.8,
+      dashArray: "8 4",
+      interactive: false,
+      className: "fantasy-map-relation-arrow",
+    }).addTo(this.map);
+    this.relationArrows.push(line);
+
+    // Arrowhead at ~85% along the curve (near the target but not on it)
+    if (showArrowhead) {
+      const arrowT = 0.85;
+      const u2 = 1 - arrowT;
+      const arrowLat =
+        u2 * u2 * from.lat + 2 * u2 * arrowT * ctrlLat + arrowT * arrowT * to.lat;
+      const arrowLng =
+        u2 * u2 * from.lng + 2 * u2 * arrowT * ctrlLng + arrowT * arrowT * to.lng;
+
+      // Tangent at arrowT for direction
+      const tgLat =
+        2 * (1 - arrowT) * (ctrlLat - from.lat) +
+        2 * arrowT * (to.lat - ctrlLat);
+      const tgLng =
+        2 * (1 - arrowT) * (ctrlLng - from.lng) +
+        2 * arrowT * (to.lng - ctrlLng);
+      const angle = Math.atan2(tgLng, tgLat);
+
+      const arrowSize = Math.sqrt(dLat * dLat + dLng * dLng) * 0.04;
+      const spread = Math.PI / 6;
+
+      const tip = L.latLng(arrowLat, arrowLng);
+      const left = L.latLng(
+        arrowLat - arrowSize * Math.cos(angle - spread),
+        arrowLng - arrowSize * Math.sin(angle - spread),
+      );
+      const right = L.latLng(
+        arrowLat - arrowSize * Math.cos(angle + spread),
+        arrowLng - arrowSize * Math.sin(angle + spread),
+      );
+
+      const arrowhead = L.polygon([tip, left, right], {
+        color,
+        fillColor: color,
+        fillOpacity: 0.9,
+        weight: 1,
+        interactive: false,
+        className: "fantasy-map-relation-arrowhead",
+      }).addTo(this.map);
+      this.relationArrows.push(arrowhead);
+    }
+
+    // Label at the midpoint of the curve
+    const labelT = 0.5;
+    const uL = 1 - labelT;
+    const labelLat =
+      uL * uL * from.lat + 2 * uL * labelT * ctrlLat + labelT * labelT * to.lat;
+    const labelLng =
+      uL * uL * from.lng + 2 * uL * labelT * ctrlLng + labelT * labelT * to.lng;
+
+    const tooltip = L.tooltip({
+      permanent: true,
+      direction: "center",
+      className: "fantasy-map-relation-label",
+      interactive: false,
+    })
+      .setLatLng(L.latLng(labelLat, labelLng))
+      .setContent(label)
+      .addTo(this.map);
+    this.relationArrows.push(tooltip);
+  }
+
+  private clearRelationArrows(): void {
+    for (const layer of this.relationArrows) {
+      this.map?.removeLayer(layer);
+    }
+    this.relationArrows = [];
+  }
+
   private selectFeature(
     state: SidebarState | null,
     leafletLayer?: L.Layer,
@@ -938,10 +1114,51 @@ export class FantasyMapView extends ItemView {
         }).addTo(this.map);
         this.relationHighlights.push(ring);
       }
+
+      // Also highlight features with incoming relations
+      const featureId = (state.properties as { id: string }).id;
+      const incoming = this.findIncomingRelations(featureId);
+      for (const rel of incoming) {
+        const relatedLayer = this.findLeafletLayerById(rel.featureId);
+        if (!relatedLayer) continue;
+
+        let latlng: L.LatLng;
+        if (relatedLayer instanceof L.Marker) {
+          latlng = relatedLayer.getLatLng();
+        } else if (relatedLayer instanceof L.Polygon) {
+          latlng = relatedLayer.getBounds().getCenter();
+        } else {
+          continue;
+        }
+
+        const ring = L.circleMarker(latlng, {
+          radius: 18,
+          weight: 2,
+          color: "#8b5cf6",
+          fillColor: "#8b5cf6",
+          fillOpacity: 0.12,
+          dashArray: "5 4",
+          interactive: false,
+          className: "fantasy-map-relation-ring",
+        }).addTo(this.map);
+        this.relationHighlights.push(ring);
+      }
+
+      // Draw curved arrows for outgoing and incoming relations
+      this.drawRelationArrows(
+        featureId,
+        leafletLayer,
+        (state.relations ?? []).map((r) => ({
+          featureId: r.featureId,
+          label: r.label,
+        })),
+      );
     }
   }
 
   private clearSelection(): void {
+    this.clearRelationArrows();
+
     for (const ring of this.relationHighlights) {
       this.map?.removeLayer(ring);
     }
