@@ -502,6 +502,9 @@ export class FantasyMapView extends ItemView {
       onAddRelation: () => {
         this.addRelationToFeature(props, layer);
       },
+      onRemoveRelation: (targetFeatureId: string) => {
+        this.removeRelationFromFeature(props, layer, targetFeatureId);
+      },
       onOpenLocalMap: props.localMapId
         ? () => void this.plugin.openMap(props.localMapId!)
         : undefined,
@@ -774,17 +777,52 @@ export class FantasyMapView extends ItemView {
     }).open();
   }
 
+  private removeRelationFromFeature(
+    properties: MarkerProperties | PolygonProperties,
+    layer: LoadedLayer,
+    targetFeatureId: string,
+  ): void {
+    const targetName =
+      this.getAllFeatures().find((f) => f.id === targetFeatureId)?.name ??
+      targetFeatureId;
+    const modal = new DeleteConfirmModal(
+      this.app,
+      "Delete Relation",
+      `Are you sure you want to delete the relation to "${targetName}"`,
+      () => {
+        const featureIndex = layer.data.features.findIndex(
+          (f) => (f.properties as { id: string }).id === properties.id,
+        );
+        if (featureIndex < 0) return;
+        const props = layer.data.features[featureIndex].properties as
+          | MarkerProperties
+          | PolygonProperties;
+        props.relations = (props.relations ?? []).filter(
+          (r) => r.featureId !== targetFeatureId,
+        );
+        void this.saveLayer(layer);
+        this.refreshMapLayers();
+      },
+    );
+    modal.open();
+  }
+
   private deleteFeature(
     properties: MarkerProperties | PolygonProperties,
     layer: LoadedLayer,
   ): void {
-    const modal = new DeleteConfirmModal(this.app, properties.name, () => {
-      layer.data.features = layer.data.features.filter(
-        (f) => (f.properties as { id: string }).id !== properties.id,
-      );
-      void this.saveLayer(layer);
-      this.refreshMapLayers();
-    });
+    const modal = new DeleteConfirmModal(
+      this.app,
+      "Delete Marker",
+      `Are you sure you want to delete marker "${properties.name}"`,
+      () => {
+        layer.data.features = layer.data.features.filter(
+          (f) => (f.properties as { id: string }).id !== properties.id,
+        );
+        void this.saveLayer(layer);
+        this.refreshMapLayers();
+      },
+    );
     modal.open();
   }
 

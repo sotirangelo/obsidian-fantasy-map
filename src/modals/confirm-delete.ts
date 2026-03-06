@@ -3,13 +3,20 @@ import { mount, unmount } from "svelte";
 import ConfirmDelete from "../components/ConfirmDelete.svelte";
 
 export class DeleteConfirmModal extends Modal {
-  private markerName: string;
+  private title: string;
+  private description: string;
   private onConfirm: () => void;
   private mountedPanel: ReturnType<typeof mount> | null = null;
 
-  constructor(app: App, markerName: string, onConfirm: () => void) {
+  constructor(
+    app: App,
+    title: string,
+    description: string,
+    onConfirm: () => void,
+  ) {
     super(app);
-    this.markerName = markerName;
+    this.title = title;
+    this.description = description;
     this.onConfirm = onConfirm;
   }
 
@@ -17,7 +24,8 @@ export class DeleteConfirmModal extends Modal {
     this.mountedPanel = mount(ConfirmDelete, {
       target: this.contentEl,
       props: {
-        markerName: this.markerName,
+        title: this.title,
+        description: this.description,
         onConfirm: () => {
           this.close();
           this.onConfirm();

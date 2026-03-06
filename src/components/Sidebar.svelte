@@ -62,10 +62,7 @@
           {selected.properties.description}
         </p>
       {/if}
-      <button
-        class="sidebar-btn"
-        onclick={() => selected?.onAddRelation()}
-      >
+      <button class="sidebar-btn" onclick={() => selected?.onAddRelation()}>
         <span use:icon={"link"}></span>
         Add Relation
       </button>
@@ -132,10 +129,17 @@
           <div class="sidebar-relation-list">
             {#each selected.relations as rel}
               <div class="sidebar-relation-item">
-                <span class="sidebar-relation-name">{rel.featureName}</span>
                 {#if rel.label}
                   <span class="sidebar-relation-label">{rel.label}</span>
                 {/if}
+                <span class="sidebar-relation-name">{rel.featureName}</span>
+                <button
+                  class="sidebar-relation-remove"
+                  onclick={() => selected?.onRemoveRelation(rel.featureId)}
+                  aria-label="Remove relation"
+                >
+                  <span use:icon={"x"}></span>
+                </button>
               </div>
             {/each}
           </div>
@@ -148,10 +152,10 @@
           <div class="sidebar-relation-list">
             {#each selected.incomingRelations as rel}
               <div class="sidebar-relation-item">
-                <span class="sidebar-relation-name">{rel.featureName}</span>
                 {#if rel.label}
                   <span class="sidebar-relation-label">{rel.label}</span>
                 {/if}
+                <span class="sidebar-relation-name">{rel.featureName}</span>
               </div>
             {/each}
           </div>
@@ -183,5 +187,21 @@
     color: var(--text-muted);
     font-size: 0.85em;
     font-style: italic;
+  }
+
+  .sidebar-relation-remove {
+    margin-left: auto;
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 2px;
+    display: flex;
+    align-items: center;
+    box-shadow: none;
+  }
+
+  .sidebar-relation-remove:hover {
+    color: var(--text-error);
   }
 </style>

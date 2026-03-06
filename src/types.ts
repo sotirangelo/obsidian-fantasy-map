@@ -86,6 +86,7 @@ export interface SidebarState {
   onEdit: () => void;
   onDelete: () => void;
   onAddRelation: () => void;
+  onRemoveRelation: (featureId: string) => void;
   onOpenLocalMap?: () => void;
   onLinkLocalMap?: () => void;
   relations?: { featureId: string; featureName: string; label: string }[];
