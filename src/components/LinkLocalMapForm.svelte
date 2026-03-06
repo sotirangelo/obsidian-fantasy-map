@@ -140,3 +140,36 @@
     </div>
   {/if}
 {/if}
+
+<style>
+  .fantasy-map-tabs {
+    display: flex;
+    gap: 0;
+    margin-bottom: 1em;
+    border-bottom: 1px solid var(--background-modifier-border);
+  }
+
+  .fantasy-map-tab {
+    padding: 6px 16px;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 0.9em;
+  }
+
+  .fantasy-map-tab:hover {
+    color: var(--text-normal);
+  }
+
+  .fantasy-map-tab.is-active {
+    color: var(--text-accent);
+    border-bottom-color: var(--text-accent);
+  }
+
+  .fantasy-map-tab:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+</style>

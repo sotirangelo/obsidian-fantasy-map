@@ -2,7 +2,11 @@
   import { untrack } from "svelte";
   import type { MarkerProperties, PolygonProperties } from "../types";
 
-  type RelationEntry = { featureId: string; featureName: string; label: string };
+  type RelationEntry = {
+    featureId: string;
+    featureName: string;
+    label: string;
+  };
 
   type FeatureType = "marker" | "polygon";
 
@@ -16,8 +20,13 @@
     onBrowseTag: (cb: (tag: string) => void) => void;
     onLinkLocalMap?: (cb: (mapId: string) => void) => void;
     allFeatures?: { id: string; name: string }[];
-    onBrowseFeature?: (cb: (featureId: string, featureName: string) => void) => void;
-    onSubmit: (properties: MarkerProperties | PolygonProperties, layerId: string) => void;
+    onBrowseFeature?: (
+      cb: (featureId: string, featureName: string) => void,
+    ) => void;
+    onSubmit: (
+      properties: MarkerProperties | PolygonProperties,
+      layerId: string,
+    ) => void;
   }
 
   let {
@@ -34,29 +43,38 @@
     onSubmit,
   }: Props = $props();
 
-  const label = untrack(() => featureType === "marker" ? "Marker" : "Region");
+  const label = untrack(() => (featureType === "marker" ? "Marker" : "Region"));
 
   let name = $state(untrack(() => initialProperties.name));
   let note = $state(untrack(() => initialProperties.note));
   let description = $state(untrack(() => initialProperties.description));
   let localMapId = $state(untrack(() => initialProperties.localMapId ?? ""));
   let selectedLayerId = $state(untrack(() => initialLayerId));
-  let notes = $state<string[]>(untrack(() => [...(initialProperties.notes ?? [])]));
-  let tags = $state<string[]>(untrack(() => [...(initialProperties.tags ?? [])]));
+  let notes = $state<string[]>(
+    untrack(() => [...(initialProperties.notes ?? [])]),
+  );
+  let tags = $state<string[]>(
+    untrack(() => [...(initialProperties.tags ?? [])]),
+  );
   let tagInput = $state("");
   let error = $state("");
   let relations = $state<RelationEntry[]>(
     untrack(() =>
       (initialProperties.relations ?? []).map((r) => ({
         featureId: r.featureId,
-        featureName: allFeatures.find((f) => f.id === r.featureId)?.name ?? r.featureId,
+        featureName:
+          allFeatures.find((f) => f.id === r.featureId)?.name ?? r.featureId,
         label: r.label,
       })),
     ),
   );
 
   let icon = $state(
-    untrack(() => (featureType === "marker" ? (initialProperties as MarkerProperties).icon : "")),
+    untrack(() =>
+      featureType === "marker"
+        ? (initialProperties as MarkerProperties).icon
+        : "",
+    ),
   );
   let color = $state(
     untrack(() => (featureType === "polygon" ? initialProperties.color : "")),
@@ -88,7 +106,11 @@
 
     if (featureType === "marker") {
       onSubmit(
-        { ...base, icon, color: (initialProperties as MarkerProperties).color } as MarkerProperties,
+        {
+          ...base,
+          icon,
+          color: (initialProperties as MarkerProperties).color,
+        } as MarkerProperties,
         selectedLayerId,
       );
     } else {
@@ -165,7 +187,9 @@
 <div class="setting-item">
   <div class="setting-item-info">
     <div class="setting-item-name">Name</div>
-    <div class="setting-item-description">Display name for the {label.toLowerCase()}</div>
+    <div class="setting-item-description">
+      Display name for the {label.toLowerCase()}
+    </div>
   </div>
   <div class="setting-item-control">
     <input
@@ -181,7 +205,9 @@
   <div class="setting-item">
     <div class="setting-item-info">
       <div class="setting-item-name">Icon</div>
-      <div class="setting-item-description">Emoji or short text for the marker</div>
+      <div class="setting-item-description">
+        Emoji or short text for the marker
+      </div>
     </div>
     <div class="setting-item-control">
       <input
@@ -213,7 +239,11 @@
 <div class="setting-item">
   <div class="setting-item-info">
     <div class="setting-item-name">Description</div>
-    <div class="setting-item-description">Short description shown in the {featureType === "marker" ? "popup" : "sidebar"}</div>
+    <div class="setting-item-description">
+      Short description shown in the {featureType === "marker"
+        ? "popup"
+        : "sidebar"}
+    </div>
   </div>
   <div class="setting-item-control">
     <textarea
@@ -229,23 +259,29 @@
 <div class="setting-item">
   <div class="setting-item-info">
     <div class="setting-item-name">Main note</div>
-    <div class="setting-item-description">Primary Obsidian note linked to this {label.toLowerCase()}</div>
+    <div class="setting-item-description">
+      Primary Obsidian note linked to this {label.toLowerCase()}
+    </div>
   </div>
   <div class="setting-item-control">
     <input
       type="text"
-      placeholder={featureType === "marker" ? "Cities/waterdeep" : "Regions/dark-forest"}
+      placeholder={featureType === "marker"
+        ? "Cities/waterdeep"
+        : "Regions/dark-forest"}
       value={note}
       oninput={(e) => (note = e.currentTarget.value)}
     />
-    <button onclick={browseMainNote}>Browse</button>
+    <button style="cursor: pointer;" onclick={browseMainNote}>Browse</button>
   </div>
 </div>
 
 <div class="setting-item">
   <div class="setting-item-info">
     <div class="setting-item-name">Additional notes</div>
-    <div class="setting-item-description">Other Obsidian notes related to this {label.toLowerCase()}</div>
+    <div class="setting-item-description">
+      Other Obsidian notes related to this {label.toLowerCase()}
+    </div>
   </div>
   <div class="setting-item-control fantasy-map-notes-control">
     {#each notes as n, i (i)}
@@ -256,11 +292,15 @@
           value={n}
           oninput={(e) => (notes[i] = e.currentTarget.value)}
         />
-        <button onclick={() => browseAdditionalNote(i)}>Browse</button>
-        <button class="fantasy-map-btn-remove" onclick={() => removeNote(i)}>×</button>
+        <button style="cursor: pointer;" onclick={() => browseAdditionalNote(i)}
+          >Browse</button
+        >
+        <button class="fantasy-map-btn-remove" onclick={() => removeNote(i)}
+          >×</button
+        >
       </div>
     {/each}
-    <button onclick={addNote}>+ Add note</button>
+    <button style="cursor: pointer;" onclick={addNote}>+ Add note</button>
   </div>
 </div>
 
@@ -275,7 +315,9 @@
         {#each tags as tag, i (i)}
           <span class="fantasy-map-tag">
             {tag}
-            <button class="fantasy-map-tag-remove" onclick={() => removeTag(i)}>×</button>
+            <button class="fantasy-map-tag-remove" onclick={() => removeTag(i)}
+              >×</button
+            >
           </span>
         {/each}
       </div>
@@ -288,8 +330,8 @@
         oninput={(e) => (tagInput = e.currentTarget.value)}
         onkeydown={handleTagKeydown}
       />
-      <button onclick={addTag}>Add</button>
-      <button onclick={browseTag}>Browse tags</button>
+      <button style="cursor: pointer;" onclick={addTag}>Add</button>
+      <button style="cursor: pointer;" onclick={browseTag}>Browse tags</button>
     </div>
   </div>
 </div>
@@ -298,22 +340,29 @@
   <div class="setting-item">
     <div class="setting-item-info">
       <div class="setting-item-name">Relations</div>
-      <div class="setting-item-description">Features related to this {label.toLowerCase()}</div>
+      <div class="setting-item-description">
+        Features related to this {label.toLowerCase()}
+      </div>
     </div>
     <div class="setting-item-control fantasy-map-relations-control">
       {#each relations as rel, i (i)}
         <div class="fantasy-map-relation-row">
-          <span class="fantasy-map-relation-name">{rel.featureName}</span>
           <input
             type="text"
             placeholder="Relationship type..."
             value={rel.label}
             oninput={(e) => (relations[i].label = e.currentTarget.value)}
           />
-          <button class="fantasy-map-btn-remove" onclick={() => removeRelation(i)}>×</button>
+          <span class="fantasy-map-relation-name">{rel.featureName}</span>
+          <button
+            class="fantasy-map-btn-remove"
+            onclick={() => removeRelation(i)}>×</button
+          >
         </div>
       {/each}
-      <button onclick={addRelation}>+ Add relation</button>
+      <button style="cursor: pointer;" onclick={addRelation}
+        >+ Add relation</button
+      >
     </div>
   </div>
 {/if}
@@ -322,7 +371,9 @@
   <div class="setting-item">
     <div class="setting-item-info">
       <div class="setting-item-name">Local Map</div>
-      <div class="setting-item-description">Link a drill-down map to this {label.toLowerCase()}</div>
+      <div class="setting-item-description">
+        Link a drill-down map to this {label.toLowerCase()}
+      </div>
     </div>
     <div class="setting-item-control">
       {#if localMapId}
@@ -367,3 +418,31 @@
     </button>
   </div>
 </div>
+
+<style>
+  .fantasy-map-relations-control {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .fantasy-map-relation-row {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 4px;
+    align-items: center;
+  }
+
+  .fantasy-map-relation-name {
+    font-size: 0.9em;
+    white-space: nowrap;
+  }
+
+  .fantasy-map-relation-row input {
+    flex: 1;
+  }
+
+  .fantasy-map-linked-label {
+    color: var(--text-success);
+    font-size: 0.9em;
+  }
+</style>
