@@ -30,6 +30,7 @@ import {
   DeleteConfirmModal,
   LinkLocalMapModal,
   NameInputModal,
+  RelationLabelModal,
 } from "../modals";
 import { MAP_CONFIG } from "../config";
 import { pickNiceDistance } from "./scales";
@@ -756,17 +757,20 @@ export class FantasyMapView extends ItemView {
   ): void {
     const allFeatures = this.getAllFeatures(properties.id);
     new FeatureSuggestModal(this.app, allFeatures, (feature) => {
-      const featureIndex = layer.data.features.findIndex(
-        (f) => (f.properties as { id: string }).id === properties.id,
-      );
-      if (featureIndex < 0) return;
-      const props = layer.data.features[featureIndex]
-        .properties as MarkerProperties | PolygonProperties;
-      const relations = props.relations ?? [];
-      if (relations.some((r) => r.featureId === feature.id)) return;
-      props.relations = [...relations, { featureId: feature.id, label: "" }];
-      void this.saveLayer(layer);
-      this.refreshMapLayers();
+      new RelationLabelModal(this.app, (label) => {
+        const featureIndex = layer.data.features.findIndex(
+          (f) => (f.properties as { id: string }).id === properties.id,
+        );
+        if (featureIndex < 0) return;
+        const props = layer.data.features[featureIndex].properties as
+          | MarkerProperties
+          | PolygonProperties;
+        const relations = props.relations ?? [];
+        if (relations.some((r) => r.featureId === feature.id)) return;
+        props.relations = [...relations, { featureId: feature.id, label }];
+        void this.saveLayer(layer);
+        this.refreshMapLayers();
+      }).open();
     }).open();
   }
 

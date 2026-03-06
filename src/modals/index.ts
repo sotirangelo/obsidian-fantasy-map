@@ -6,3 +6,4 @@ export { CreateMapModal, ImageSuggestModal } from "./create-map";
 export { SetScaleModal } from "./set-scale";
 export { LinkLocalMapModal } from "./link-local-map";
 export { NameInputModal } from "./name-input";
+export { RelationLabelModal } from "./relation-label";
