@@ -1,6 +1,6 @@
 # Build output
-main.js
-styles.css
+/main.js
+/styles.css
 
 # Dependencies
 node_modules/

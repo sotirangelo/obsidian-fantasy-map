@@ -1,6 +1,7 @@
 <script lang="ts">
   import { setIcon } from "obsidian";
-  import type * as L from "leaflet";
+  import * as L from "leaflet";
+  import { DEFAULT_MARKER_COLOR } from "../config";
 
   interface Props {
     map: L.Map;
@@ -51,7 +52,16 @@
       activeMode = null;
     } else {
       disableAllModes();
-      map.pm.enableDraw(shape);
+      map.pm.enableDraw(shape, shape === "Marker" ? {
+        markerStyle: {
+          icon: L.divIcon({
+            className: "fantasy-map-dot-icon",
+            html: `<span class="marker-dot" style="background:${DEFAULT_MARKER_COLOR};"></span>`,
+            iconSize: [12, 12],
+            iconAnchor: [6, 6],
+          }),
+        },
+      } : {});
       activeMode = `draw:${shape}`;
     }
   }
