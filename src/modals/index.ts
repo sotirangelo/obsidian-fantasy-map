@@ -1,6 +1,6 @@
 export { FeatureModal } from "./feature";
 export { DeleteConfirmModal } from "./confirm-delete";
-export { NoteSuggestModal } from "./link-note";
+export { NoteSuggestModal, FeatureSuggestModal } from "./link-note";
 export { MapPickerModal } from "./pick-map";
 export { CreateMapModal, ImageSuggestModal } from "./create-map";
 export { SetScaleModal } from "./set-scale";

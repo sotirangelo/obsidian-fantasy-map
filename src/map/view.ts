@@ -26,6 +26,7 @@ import { loadConfiguredLayers } from "./layers";
 import { createMarkerFromFeature } from "./markers";
 import {
   FeatureModal,
+  FeatureSuggestModal,
   DeleteConfirmModal,
   LinkLocalMapModal,
   NameInputModal,
@@ -497,6 +498,9 @@ export class FantasyMapView extends ItemView {
       onDelete: () => {
         this.deleteFeature(props, layer);
       },
+      onAddRelation: () => {
+        this.addRelationToFeature(props, layer);
+      },
       onOpenLocalMap: props.localMapId
         ? () => void this.plugin.openMap(props.localMapId!)
         : undefined,
@@ -744,6 +748,26 @@ export class FantasyMapView extends ItemView {
       undefined,
       this.getAllFeatures(properties.id),
     ).open();
+  }
+
+  private addRelationToFeature(
+    properties: MarkerProperties | PolygonProperties,
+    layer: LoadedLayer,
+  ): void {
+    const allFeatures = this.getAllFeatures(properties.id);
+    new FeatureSuggestModal(this.app, allFeatures, (feature) => {
+      const featureIndex = layer.data.features.findIndex(
+        (f) => (f.properties as { id: string }).id === properties.id,
+      );
+      if (featureIndex < 0) return;
+      const props = layer.data.features[featureIndex]
+        .properties as MarkerProperties | PolygonProperties;
+      const relations = props.relations ?? [];
+      if (relations.some((r) => r.featureId === feature.id)) return;
+      props.relations = [...relations, { featureId: feature.id, label: "" }];
+      void this.saveLayer(layer);
+      this.refreshMapLayers();
+    }).open();
   }
 
   private deleteFeature(

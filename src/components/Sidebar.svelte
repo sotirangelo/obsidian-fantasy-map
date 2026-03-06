@@ -62,6 +62,13 @@
           {selected.properties.description}
         </p>
       {/if}
+      <button
+        class="sidebar-btn"
+        onclick={() => selected?.onAddRelation()}
+      >
+        <span use:icon={"link"}></span>
+        Add Relation
+      </button>
       {#if selected.onOpenLocalMap}
         <button
           class="sidebar-btn"
@@ -69,14 +76,6 @@
         >
           <span use:icon={"map"}></span>
           Open Local Map
-        </button>
-      {:else if selected.onLinkLocalMap}
-        <button
-          class="sidebar-btn"
-          onclick={() => selected?.onLinkLocalMap?.()}
-        >
-          <span use:icon={"map-plus"}></span>
-          Link Local Map
         </button>
       {/if}
       {#if selected.properties.note}

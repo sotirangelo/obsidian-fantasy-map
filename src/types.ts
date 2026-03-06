@@ -85,6 +85,7 @@ export interface SidebarState {
   onSearchTag: (tag: string) => void;
   onEdit: () => void;
   onDelete: () => void;
+  onAddRelation: () => void;
   onOpenLocalMap?: () => void;
   onLinkLocalMap?: () => void;
   relations?: { featureId: string; featureName: string; label: string }[];
