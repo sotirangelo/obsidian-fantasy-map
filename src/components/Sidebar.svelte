@@ -12,6 +12,7 @@
     onDelete: () => void;
     onOpenLocalMap?: () => void;
     onLinkLocalMap?: () => void;
+    relations?: { featureId: string; featureName: string; label: string }[];
   }
 
   interface Props {
@@ -127,6 +128,22 @@
                 class="sidebar-tag"
                 onclick={() => selected?.onSearchTag(tag)}
               >{tag}</button>
+            {/each}
+          </div>
+        </div>
+      {/if}
+
+      {#if selected.relations && selected.relations.length > 0}
+        <div class="sidebar-detail-section">
+          <div class="sidebar-detail-label">Relations</div>
+          <div class="sidebar-relation-list">
+            {#each selected.relations as rel}
+              <div class="sidebar-relation-item">
+                <span class="sidebar-relation-name">{rel.featureName}</span>
+                {#if rel.label}
+                  <span class="sidebar-relation-label">{rel.label}</span>
+                {/if}
+              </div>
             {/each}
           </div>
         </div>

@@ -2,6 +2,8 @@
   import { untrack } from "svelte";
   import type { MarkerProperties, PolygonProperties } from "../types";
 
+  type RelationEntry = { featureId: string; featureName: string; label: string };
+
   type FeatureType = "marker" | "polygon";
 
   interface Props {
@@ -13,6 +15,8 @@
     onBrowseNote: (cb: (path: string) => void) => void;
     onBrowseTag: (cb: (tag: string) => void) => void;
     onLinkLocalMap?: (cb: (mapId: string) => void) => void;
+    allFeatures?: { id: string; name: string }[];
+    onBrowseFeature?: (cb: (featureId: string, featureName: string) => void) => void;
     onSubmit: (properties: MarkerProperties | PolygonProperties, layerId: string) => void;
   }
 
@@ -25,6 +29,8 @@
     onBrowseNote,
     onBrowseTag,
     onLinkLocalMap,
+    allFeatures = [],
+    onBrowseFeature,
     onSubmit,
   }: Props = $props();
 
@@ -39,6 +45,15 @@
   let tags = $state<string[]>(untrack(() => [...(initialProperties.tags ?? [])]));
   let tagInput = $state("");
   let error = $state("");
+  let relations = $state<RelationEntry[]>(
+    untrack(() =>
+      (initialProperties.relations ?? []).map((r) => ({
+        featureId: r.featureId,
+        featureName: allFeatures.find((f) => f.id === r.featureId)?.name ?? r.featureId,
+        label: r.label,
+      })),
+    ),
+  );
 
   let icon = $state(
     untrack(() => (featureType === "marker" ? (initialProperties as MarkerProperties).icon : "")),
@@ -56,6 +71,9 @@
 
     const filteredNotes = notes.filter((n) => n.trim());
     const filteredTags = tags.filter((t) => t.trim());
+    const filteredRelations = relations
+      .filter((r) => r.featureId)
+      .map(({ featureId, label }) => ({ featureId, label }));
 
     const base = {
       id: initialProperties.id,
@@ -65,6 +83,7 @@
       localMapId: localMapId || undefined,
       notes: filteredNotes.length > 0 ? filteredNotes : undefined,
       tags: filteredTags.length > 0 ? filteredTags : undefined,
+      relations: filteredRelations.length > 0 ? filteredRelations : undefined,
     };
 
     if (featureType === "marker") {
@@ -122,6 +141,16 @@
 
   function removeTag(index: number) {
     tags.splice(index, 1);
+  }
+
+  function addRelation() {
+    onBrowseFeature?.((featureId, featureName) => {
+      relations.push({ featureId, featureName, label: "" });
+    });
+  }
+
+  function removeRelation(index: number) {
+    relations.splice(index, 1);
   }
 
   function handleLinkLocalMap() {
@@ -264,6 +293,30 @@
     </div>
   </div>
 </div>
+
+{#if onBrowseFeature}
+  <div class="setting-item">
+    <div class="setting-item-info">
+      <div class="setting-item-name">Relations</div>
+      <div class="setting-item-description">Features related to this {label.toLowerCase()}</div>
+    </div>
+    <div class="setting-item-control fantasy-map-relations-control">
+      {#each relations as rel, i (i)}
+        <div class="fantasy-map-relation-row">
+          <span class="fantasy-map-relation-name">{rel.featureName}</span>
+          <input
+            type="text"
+            placeholder="Relationship type..."
+            value={rel.label}
+            oninput={(e) => (relations[i].label = e.currentTarget.value)}
+          />
+          <button class="fantasy-map-btn-remove" onclick={() => removeRelation(i)}>×</button>
+        </div>
+      {/each}
+      <button onclick={addRelation}>+ Add relation</button>
+    </div>
+  </div>
+{/if}
 
 {#if onLinkLocalMap}
   <div class="setting-item">
