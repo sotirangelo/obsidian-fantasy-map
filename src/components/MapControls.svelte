@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { setIcon } from "obsidian";
+  import { icon } from "../utils";
   import * as L from "leaflet";
   import { DEFAULT_MARKER_COLOR } from "../config";
 
@@ -27,10 +27,6 @@
 
   let activeMode = $state<string | null>(null);
 
-  function icon(node: HTMLElement, name: string) {
-    setIcon(node, name);
-  }
-
   function zoomIn() {
     map.zoomIn();
   }
@@ -52,16 +48,21 @@
       activeMode = null;
     } else {
       disableAllModes();
-      map.pm.enableDraw(shape, shape === "Marker" ? {
-        markerStyle: {
-          icon: L.divIcon({
-            className: "fantasy-map-dot-icon",
-            html: `<span class="marker-dot" style="background:${DEFAULT_MARKER_COLOR};"></span>`,
-            iconSize: [12, 12],
-            iconAnchor: [6, 6],
-          }),
-        },
-      } : {});
+      map.pm.enableDraw(
+        shape,
+        shape === "Marker"
+          ? {
+              markerStyle: {
+                icon: L.divIcon({
+                  className: "fantasy-map-dot-icon",
+                  html: `<span class="marker-dot" style="background:${DEFAULT_MARKER_COLOR};"></span>`,
+                  iconSize: [12, 12],
+                  iconAnchor: [6, 6],
+                }),
+              },
+            }
+          : {},
+      );
       activeMode = `draw:${shape}`;
     }
   }

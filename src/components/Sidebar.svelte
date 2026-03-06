@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { SidebarState } from "../types";
+  import { icon } from "../utils";
 
   interface Props {
     registerUpdate: (fn: (state: SidebarState | null) => void) => void;
@@ -35,7 +36,6 @@
       });
     }
   });
-
 </script>
 
 <div class="fantasy-map-sidebar-content">
@@ -45,13 +45,17 @@
         {selected.properties.name}
       </h3>
       <div class="sidebar-buttons">
-        <button class="sidebar-btn" onclick={() => selected?.onEdit()}
-          >Edit</button
-        >
+        <button class="sidebar-btn" onclick={() => selected?.onEdit()}>
+          <span use:icon={"pencil"}></span>
+          Edit
+        </button>
         <button
           class="sidebar-btn sidebar-btn-danger"
-          onclick={() => selected?.onDelete()}>Delete</button
+          onclick={() => selected?.onDelete()}
         >
+          <span use:icon={"trash-2"}></span>
+          Delete
+        </button>
       </div>
       {#if selected.properties.description}
         <p class="sidebar-marker-description">
@@ -63,6 +67,7 @@
           class="sidebar-btn"
           onclick={() => selected?.onOpenLocalMap?.()}
         >
+          <span use:icon={"map"}></span>
           Open Local Map
         </button>
       {:else if selected.onLinkLocalMap}
@@ -70,6 +75,7 @@
           class="sidebar-btn"
           onclick={() => selected?.onLinkLocalMap?.()}
         >
+          <span use:icon={"map-plus"}></span>
           Link Local Map
         </button>
       {/if}
