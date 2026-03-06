@@ -35,7 +35,7 @@ import { pickNiceDistance } from "./scales";
 import { createScaleBar } from "./controls";
 import { CalibrationHandler } from "./calibration";
 import { MeasureHandler } from "./measure";
-import { SelectionManager } from "./selection";
+import { SelectionManager, findIncomingRelations } from "./selection";
 import Sidebar from "../components/Sidebar.svelte";
 import MapControls from "../components/MapControls.svelte";
 
@@ -472,6 +472,7 @@ export class FantasyMapView extends ItemView {
       featureType,
       properties: props,
       relations: this.resolveRelations(props),
+      incomingRelations: findIncomingRelations(props.id, this.layers),
       onOpenNote: (path: string) => {
         void this.app.workspace.openLinkText(path, "", false);
       },

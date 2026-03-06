@@ -142,6 +142,22 @@
           </div>
         </div>
       {/if}
+
+      {#if selected.incomingRelations && selected.incomingRelations.length > 0}
+        <div class="sidebar-detail-section">
+          <div class="sidebar-detail-label">Referenced by</div>
+          <div class="sidebar-relation-list">
+            {#each selected.incomingRelations as rel}
+              <div class="sidebar-relation-item">
+                <span class="sidebar-relation-name">{rel.featureName}</span>
+                {#if rel.label}
+                  <span class="sidebar-relation-label">{rel.label}</span>
+                {/if}
+              </div>
+            {/each}
+          </div>
+        </div>
+      {/if}
     </div>
   {/if}
 </div>

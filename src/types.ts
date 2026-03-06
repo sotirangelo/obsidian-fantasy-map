@@ -88,4 +88,5 @@ export interface SidebarState {
   onOpenLocalMap?: () => void;
   onLinkLocalMap?: () => void;
   relations?: { featureId: string; featureName: string; label: string }[];
+  incomingRelations?: { featureId: string; featureName: string; label: string }[];
 }
