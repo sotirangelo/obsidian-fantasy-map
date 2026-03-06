@@ -386,7 +386,7 @@ export class FantasyMapView extends ItemView {
 
   private async createLayer(config: MapConfig, name: string): Promise<void> {
     const newLayerConfig: LayerConfig = {
-      id: crypto.randomUUID(),
+      id: window.crypto.randomUUID(),
       name,
     };
 
