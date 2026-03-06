@@ -19,6 +19,7 @@ import type {
   PolygonFeature,
   MarkerProperties,
   PolygonProperties,
+  ObsidianApp,
 } from "../types";
 import { loadConfiguredLayers } from "./layers";
 import { createMarkerFromFeature, fixLeafletDefaultIcons } from "./markers";
@@ -51,6 +52,7 @@ interface SidebarState {
   onDelete: () => void;
   onOpenLocalMap?: () => void;
   onLinkLocalMap?: () => void;
+  relations?: { featureId: string; featureName: string; label: string }[];
 }
 
 export const FANTASY_MAP_VIEW = "fantasy-map-view";
@@ -72,6 +74,7 @@ export class FantasyMapView extends ItemView {
   private measure: MeasureHandler | null = null;
   private selectedLayer: L.Layer | null = null;
   private selectionRing: L.CircleMarker | null = null;
+  private relationHighlights: L.CircleMarker[] = [];
 
   constructor(leaf: WorkspaceLeaf, plugin: FantasyMapPlugin) {
     super(leaf);
@@ -487,6 +490,7 @@ export class FantasyMapView extends ItemView {
         {
           featureType: "marker",
           properties: props,
+          relations: this.resolveRelations(props),
           onOpenNote: (path: string) => {
             void this.app.workspace.openLinkText(path, "", false);
           },
@@ -506,7 +510,7 @@ export class FantasyMapView extends ItemView {
             );
           },
           onSearchTag: (tag: string) => {
-            const search = (this.app as any).internalPlugins?.getPluginById?.("global-search")?.instance;
+            const search = (this.app as ObsidianApp).internalPlugins?.getPluginById?.("global-search")?.instance;
             search?.openGlobalSearch(`tag:${tag}`);
           },
           onEdit: () => {
@@ -556,6 +560,7 @@ export class FantasyMapView extends ItemView {
         {
           featureType: "polygon",
           properties: props,
+          relations: this.resolveRelations(props),
           onOpenNote: (path: string) => {
             void this.app.workspace.openLinkText(path, "", false);
           },
@@ -575,7 +580,7 @@ export class FantasyMapView extends ItemView {
             );
           },
           onSearchTag: (tag: string) => {
-            const search = (this.app as any).internalPlugins?.getPluginById?.("global-search")?.instance;
+            const search = (this.app as ObsidianApp).internalPlugins?.getPluginById?.("global-search")?.instance;
             search?.openGlobalSearch(`tag:${tag}`);
           },
           onEdit: () => {
@@ -669,6 +674,7 @@ export class FantasyMapView extends ItemView {
             this.openLinkLocalMapForNew(featureId, cb);
           }
         : undefined,
+      this.getAllFeatures(),
     );
     modal.open();
   }
@@ -739,6 +745,7 @@ export class FantasyMapView extends ItemView {
             this.openLinkLocalMapForNew(featureId, cb);
           }
         : undefined,
+      this.getAllFeatures(),
     );
     modal.open();
   }
@@ -766,6 +773,8 @@ export class FantasyMapView extends ItemView {
           this.refreshMapLayers();
         }
       },
+      undefined,
+      this.getAllFeatures(properties.id),
     );
     modal.open();
   }
@@ -791,6 +800,8 @@ export class FantasyMapView extends ItemView {
           this.refreshMapLayers();
         }
       },
+      undefined,
+      this.getAllFeatures(properties.id),
     );
     modal.open();
   }
@@ -897,6 +908,43 @@ export class FantasyMapView extends ItemView {
 
   // --- Utilities ---
 
+  private getAllFeatures(excludeId?: string): { id: string; name: string }[] {
+    const features: { id: string; name: string }[] = [];
+    for (const layer of this.layers) {
+      for (const feature of layer.data.features) {
+        const props = feature.properties as { id: string; name: string };
+        if (props.id !== excludeId) {
+          features.push({ id: props.id, name: props.name });
+        }
+      }
+    }
+    return features;
+  }
+
+  private findLeafletLayerById(featureId: string): L.Layer | null {
+    for (const loadedLayer of this.layers) {
+      if (!loadedLayer.leafletLayer) continue;
+      const layers: L.Layer[] = [];
+      loadedLayer.leafletLayer.eachLayer((layer) => layers.push(layer));
+      const found = layers.find((layer) => {
+        const f = (layer as unknown as { feature?: MapFeature }).feature;
+        return (f?.properties as { id?: string } | undefined)?.id === featureId;
+      });
+      if (found !== undefined) return found;
+    }
+    return null;
+  }
+
+  private resolveRelations(
+    props: MarkerProperties | PolygonProperties,
+  ): { featureId: string; featureName: string; label: string }[] {
+    return (props.relations ?? []).map((r) => ({
+      featureId: r.featureId,
+      featureName: this.getAllFeatures().find((f) => f.id === r.featureId)?.name ?? r.featureId,
+      label: r.label,
+    }));
+  }
+
   private selectFeature(
     state: SidebarState | null,
     leafletLayer?: L.Layer,
@@ -941,10 +989,42 @@ export class FantasyMapView extends ItemView {
           className: "fantasy-map-polygon--selected",
         });
       }
+
+      // Highlight related features
+      for (const rel of state.relations ?? []) {
+        const relatedLayer = this.findLeafletLayerById(rel.featureId);
+        if (!relatedLayer) continue;
+
+        let latlng: L.LatLng;
+        if (relatedLayer instanceof L.Marker) {
+          latlng = relatedLayer.getLatLng();
+        } else if (relatedLayer instanceof L.Polygon) {
+          latlng = (relatedLayer).getBounds().getCenter();
+        } else {
+          continue;
+        }
+
+        const ring = L.circleMarker(latlng, {
+          radius: 18,
+          weight: 2,
+          color: "#f59e0b",
+          fillColor: "#f59e0b",
+          fillOpacity: 0.12,
+          dashArray: "5 4",
+          interactive: false,
+          className: "fantasy-map-relation-ring",
+        }).addTo(this.map);
+        this.relationHighlights.push(ring);
+      }
     }
   }
 
   private clearSelection(): void {
+    for (const ring of this.relationHighlights) {
+      this.map?.removeLayer(ring);
+    }
+    this.relationHighlights = [];
+
     if (this.selectionRing && this.map) {
       this.map.removeLayer(this.selectionRing);
       this.selectionRing = null;

@@ -7,6 +7,24 @@ import type {
   FantasyMapSettingsSchema,
   LayerConfigSchema,
 } from "./schemas";
+import type { App, MetadataCache } from "obsidian";
+
+// Obsidian internal APIs not exposed in the public type definitions
+export interface ObsidianInternalPlugin {
+  instance: {
+    openGlobalSearch(query: string): void;
+  };
+}
+
+export interface ObsidianApp extends App {
+  internalPlugins?: {
+    getPluginById?: (id: string) => ObsidianInternalPlugin | undefined;
+  };
+}
+
+export interface ExtendedMetadataCache extends MetadataCache {
+  getTags(): Record<string, number>;
+}
 
 export type LayerConfig = v.InferOutput<typeof LayerConfigSchema>;
 export type MapConfig = v.InferOutput<typeof MapConfigSchema>;
@@ -16,6 +34,11 @@ export type FantasyMapSettings = v.InferOutput<typeof FantasyMapSettingsSchema>;
 export const DEFAULT_SETTINGS: FantasyMapSettings = {
   maps: [],
 };
+
+export interface FeatureRelation {
+  featureId: string;
+  label: string;
+}
 
 export interface MarkerProperties {
   id: string;
@@ -27,6 +50,7 @@ export interface MarkerProperties {
   localMapId?: string;
   notes?: string[];
   tags?: string[];
+  relations?: FeatureRelation[];
 }
 
 export interface PolygonProperties {
@@ -38,6 +62,7 @@ export interface PolygonProperties {
   localMapId?: string;
   notes?: string[];
   tags?: string[];
+  relations?: FeatureRelation[];
 }
 
 export type MarkerFeature = Feature<Point, MarkerProperties>;
