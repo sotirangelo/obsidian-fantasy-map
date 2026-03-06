@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { MarkerProperties, SidebarState } from "../types";
+  import type { SidebarState } from "../types";
 
   interface Props {
     registerUpdate: (fn: (state: SidebarState | null) => void) => void;
@@ -36,20 +36,13 @@
     }
   });
 
-  function getIcon(state: SidebarState): string {
-    if (state.featureType === "marker") {
-      return (state.properties as MarkerProperties).icon ?? "";
-    }
-    return "";
-  }
 </script>
 
 <div class="fantasy-map-sidebar-content">
   {#if selected}
     <div>
       <h3 class="sidebar-marker-title">
-        {#if getIcon(selected)}{getIcon(selected)}{" "}{/if}{selected.properties
-          .name}
+        {selected.properties.name}
       </h3>
       <div class="sidebar-buttons">
         <button class="sidebar-btn" onclick={() => selected?.onEdit()}
