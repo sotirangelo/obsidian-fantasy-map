@@ -10,15 +10,15 @@ export class RelationLabelModal extends Modal {
 
   onOpen(): void {
     const { contentEl } = this;
-    this.setTitle("Add Relation");
+    this.setTitle("Add relation");
 
     let value = "";
 
     new Setting(contentEl)
       .setName("Relation type")
-      .setDesc("Optional label describing the kind of relation (e.g. ally, enemy, capital of)")
+      .setDesc("Optional label describing the kind of relation, such as ally, enemy, or capital of")
       .addText((text) => {
-        text.setPlaceholder("e.g. ally, enemy, capital of").onChange((v) => {
+        text.setPlaceholder("Ally, enemy, capital of...").onChange((v) => {
           value = v;
         });
         text.inputEl.addEventListener("keydown", (e) => {

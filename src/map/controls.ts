@@ -23,8 +23,21 @@ export function createScaleBar(
       .distanceTo(map.latLngToContainerPoint(p2));
     const pixelsPerUnit = screenPx / scale.realDistance;
     const { distance, barPixels } = computeBar(pixelsPerUnit, 200);
-    // eslint-disable-next-line @microsoft/sdl/no-inner-html
-    scaleBarDiv.innerHTML = `<div class="scale-bar-title">Scale</div><div class="scale-bar-line" style="width:${Math.round(barPixels).toString()}px"></div><div class="scale-bar-label">${distance.toString()} ${scale.unit}</div>`;
+    scaleBarDiv.replaceChildren();
+
+    const title = document.createElement("div");
+    title.className = "scale-bar-title";
+    title.textContent = "Scale";
+
+    const line = document.createElement("div");
+    line.className = "scale-bar-line";
+    line.style.width = `${Math.round(barPixels).toString()}px`;
+
+    const label = document.createElement("div");
+    label.className = "scale-bar-label";
+    label.textContent = `${distance.toString()} ${scale.unit}`;
+
+    scaleBarDiv.append(title, line, label);
   };
 
   updateContent();

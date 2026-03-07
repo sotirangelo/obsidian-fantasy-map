@@ -107,7 +107,7 @@ export class FantasyMapView extends ItemView {
     const config = this.getMapConfig();
     if (!config) {
       container.createEl("p", {
-        text: "No map configured. Use the 'Create new map' command or go to Settings > Fantasy Map.",
+        text: "No map configured. Use the 'create new map' command or go to settings > fantasy map.",
         cls: "fantasy-map-notice",
       });
       return;
@@ -115,7 +115,7 @@ export class FantasyMapView extends ItemView {
 
     if (!config.mapImagePath) {
       container.createEl("p", {
-        text: "No map image configured. Go to Settings > Fantasy Map to set a map image path.",
+        text: "No map image configured. Go to settings > fantasy map to set a map image path.",
         cls: "fantasy-map-notice",
       });
       return;
@@ -191,7 +191,7 @@ export class FantasyMapView extends ItemView {
   }
 
   async onClose(): Promise<void> {
-    this.cleanup();
+    await Promise.resolve(this.cleanup());
   }
 
   // --- Image Loading ---
@@ -600,7 +600,7 @@ export class FantasyMapView extends ItemView {
 
     if (layerOptions.length === 0) {
       new Notice(
-        "No layers configured. Use the 'Add Layer' button on the map.",
+        "No layers configured. Use the 'add layer' button on the map.",
       );
       return;
     }
@@ -653,7 +653,7 @@ export class FantasyMapView extends ItemView {
 
     if (layerOptions.length === 0) {
       new Notice(
-        "No layers configured. Use the 'Add Layer' button on the map.",
+        "No layers configured. Use the 'add layer' button on the map.",
       );
       return;
     }
