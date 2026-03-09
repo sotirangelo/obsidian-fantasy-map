@@ -40,6 +40,8 @@ import { MeasureHandler } from "./measure";
 import { SelectionManager, findIncomingRelations } from "./selection";
 import Sidebar from "../components/Sidebar.svelte";
 import MapControls from "../components/MapControls.svelte";
+import CreateMapForm from "../components/CreateMapForm.svelte";
+import { ImageSuggestModal } from "../modals/create-map";
 
 export const FANTASY_MAP_VIEW = "fantasy-map-view";
 
@@ -61,6 +63,7 @@ export class FantasyMapView extends ItemView {
   private calibration: CalibrationHandler | null = null;
   private measure: MeasureHandler | null = null;
   private selection: SelectionManager | null = null;
+  private createFormComponent: ReturnType<typeof mount> | null = null;
 
   constructor(leaf: WorkspaceLeaf, plugin: FantasyMapPlugin) {
     super(leaf);
@@ -106,9 +109,29 @@ export class FantasyMapView extends ItemView {
 
     const config = this.getMapConfig();
     if (!config) {
-      container.createEl("p", {
-        text: "No map configured. Use the 'create new map' command or go to settings > fantasy map.",
-        cls: "fantasy-map-notice",
+      const formWrapper = container.createDiv({ cls: "fantasy-map-create-form-wrapper" });
+      this.createFormComponent = mount(CreateMapForm, {
+        target: formWrapper,
+        props: {
+          onBrowseImage: (cb: (path: string) => void) => {
+            new ImageSuggestModal(this.app, (file) => {
+              cb(file.path);
+            }).open();
+          },
+          onSubmit: (name: string, imagePath: string) => {
+            const newMap = {
+              id: window.crypto.randomUUID(),
+              name,
+              mapImagePath: imagePath,
+              layers: [],
+            };
+            this.plugin.settings.maps.push(newMap);
+            void this.plugin.saveSettings().then(() => {
+              this.mapId = newMap.id;
+              void this.renderMap();
+            });
+          },
+        },
       });
       return;
     }
@@ -174,6 +197,10 @@ export class FantasyMapView extends ItemView {
     if (this.controlsComponent) {
       void unmount(this.controlsComponent);
       this.controlsComponent = null;
+    }
+    if (this.createFormComponent) {
+      void unmount(this.createFormComponent);
+      this.createFormComponent = null;
     }
     this.updateSidebar = null;
     this.sidebarEl = null;

@@ -270,6 +270,12 @@
   color: var(--text-muted);
 }
 
+.fantasy-map-create-form-wrapper {
+  max-width: 500px;
+  margin: 4em auto;
+  padding: 0 2em;
+}
+
 .fantasy-map-error {
   color: var(--text-error);
 }
