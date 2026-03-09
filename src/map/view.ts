@@ -371,10 +371,12 @@ export class FantasyMapView extends ItemView {
 
   // --- Layer Management ---
 
-  private promptAddLayer(config: MapConfig): void {
+  private promptAddLayer(config: MapConfig, onCreated?: () => void): void {
     const defaultName = config.name ? `${config.name} Layer` : "New Layer";
     new NameInputModal(this.app, defaultName, (name) => {
-      void this.createLayer(config, name);
+      const promise = this.createLayer(config, name);
+      if (onCreated) void promise.then(onCreated);
+      else void promise;
     }).open();
   }
 
@@ -585,9 +587,9 @@ export class FantasyMapView extends ItemView {
     const layerOptions = this.getLayerOptions();
 
     if (layerOptions.length === 0) {
-      new Notice(
-        "No layers configured. Use the 'add layer' button on the map.",
-      );
+      const config = this.getMapConfig();
+      if (!config) return;
+      this.promptAddLayer(config, () => this.openAddMarkerModal(latlng));
       return;
     }
 
@@ -635,9 +637,9 @@ export class FantasyMapView extends ItemView {
     const layerOptions = this.getLayerOptions();
 
     if (layerOptions.length === 0) {
-      new Notice(
-        "No layers configured. Use the 'add layer' button on the map.",
-      );
+      const config = this.getMapConfig();
+      if (!config) return;
+      this.promptAddLayer(config, () => this.openAddPolygonModal(polygon));
       return;
     }
 
