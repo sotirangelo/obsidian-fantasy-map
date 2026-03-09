@@ -71,7 +71,6 @@ export type MapFeatureCollection = FeatureCollection;
 
 export interface LoadedLayer {
   config: LayerConfig;
-  filePath: string;
   data: MapFeatureCollection;
   leafletLayer: L.GeoJSON | null;
 }

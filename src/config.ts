@@ -8,5 +8,3 @@ export const MAP_CONFIG = {
 } satisfies L.MapOptions;
 
 export const DEFAULT_MARKER_COLOR = "#3388ff";
-
-export const LAYERS_BASE_FOLDER = "fantasy-map-layers";

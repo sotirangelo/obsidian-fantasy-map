@@ -4,7 +4,7 @@ import { FantasyMapView, FANTASY_MAP_VIEW } from "./map/view";
 import { MapPickerModal, CreateMapModal } from "./modals";
 import { DEFAULT_SETTINGS } from "./types";
 import type { FantasyMapSettings } from "./types";
-import { FantasyMapSettingsSchema, LegacySettingsSchema } from "./schemas";
+import { FantasyMapSettingsSchema } from "./schemas";
 
 export default class FantasyMapPlugin extends Plugin {
   settings: FantasyMapSettings = DEFAULT_SETTINGS;
@@ -46,7 +46,6 @@ export default class FantasyMapPlugin extends Plugin {
         name,
         mapImagePath: imagePath,
         layers: [],
-        defaultLayerId: "",
       };
       this.settings.maps.push(newMap);
       void this.saveSettings().then(() => this.openMap(newMap.id));
@@ -94,32 +93,6 @@ export default class FantasyMapPlugin extends Plugin {
   async loadSettings(): Promise<void> {
     const data: unknown = await this.loadData();
     if (!data) return;
-
-    // Migrate from old single-map settings to new multi-map format
-    const legacyResult = v.safeParse(LegacySettingsSchema, data);
-    if (legacyResult.success) {
-      const { mapImagePath } = legacyResult.output;
-
-      this.settings = {
-        maps: mapImagePath
-          ? [
-              {
-                id: window.crypto.randomUUID(),
-                name:
-                  mapImagePath
-                    .split("/")
-                    .pop()
-                    ?.replace(/\.\w+$/, "") ?? "Map",
-                mapImagePath,
-                layers: [],
-                defaultLayerId: "",
-              },
-            ]
-          : [],
-      };
-      await this.saveSettings();
-      return;
-    }
 
     const result = v.safeParse(FantasyMapSettingsSchema, data);
     if (result.success) {

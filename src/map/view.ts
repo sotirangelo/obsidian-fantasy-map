@@ -140,7 +140,7 @@ export class FantasyMapView extends ItemView {
       this.blobUrl = imageUrl;
       const dimensions = await this.getImageDimensions(imageUrl);
       this.initializeMap(imageUrl, dimensions, config);
-      await this.loadAndDisplayLayers(config);
+      this.loadAndDisplayLayers(config);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unknown error";
       container.createEl("p", {
@@ -382,16 +382,13 @@ export class FantasyMapView extends ItemView {
     const newLayerConfig: LayerConfig = {
       id: window.crypto.randomUUID(),
       name,
+      features: [],
     };
 
     config.layers.push(newLayerConfig);
     await this.plugin.saveSettings();
 
-    const loaded = await loadConfiguredLayers(
-      this.app.vault.adapter,
-      config.id,
-      [newLayerConfig],
-    );
+    const loaded = loadConfiguredLayers([newLayerConfig]);
 
     for (const layer of loaded) {
       this.layers.push(layer);
@@ -401,14 +398,10 @@ export class FantasyMapView extends ItemView {
     new Notice(`Layer "${name}" added`);
   }
 
-  private async loadAndDisplayLayers(config: MapConfig): Promise<void> {
+  private loadAndDisplayLayers(config: MapConfig): void {
     if (!this.map) return;
 
-    this.layers = await loadConfiguredLayers(
-      this.app.vault.adapter,
-      config.id,
-      config.layers,
-    );
+    this.layers = loadConfiguredLayers(config.layers);
 
     for (const layer of this.layers) {
       this.addLayerToMap(layer);
@@ -570,13 +563,6 @@ export class FantasyMapView extends ItemView {
     return this.layers.map((l) => ({ id: l.config.id, name: l.config.name }));
   }
 
-  private resolveDefaultLayerId(
-    layerOptions: { id: string; name: string }[],
-  ): string {
-    const config = this.getMapConfig();
-    const defaultLayerId = config?.defaultLayerId ?? "";
-    return defaultLayerId || (layerOptions[0]?.id ?? "");
-  }
 
   // --- Add Marker ---
 
@@ -605,14 +591,11 @@ export class FantasyMapView extends ItemView {
       return;
     }
 
-    const defaultLayerId = this.resolveDefaultLayerId(layerOptions);
-
     new FeatureModal(
       this.app,
       "marker",
       null,
       layerOptions,
-      defaultLayerId,
       (properties, selectedLayerId) => {
         const feature: MarkerFeature = {
           type: "Feature",
@@ -658,14 +641,11 @@ export class FantasyMapView extends ItemView {
       return;
     }
 
-    const defaultLayerId = this.resolveDefaultLayerId(layerOptions);
-
     new FeatureModal(
       this.app,
       "polygon",
       null,
       layerOptions,
-      defaultLayerId,
       (properties, selectedLayerId) => {
         const latLngs = polygon.getLatLngs() as L.LatLng[][];
         const coordinates: [number, number][][] = latLngs.map((ring) =>
@@ -723,7 +703,6 @@ export class FantasyMapView extends ItemView {
       featureType,
       properties,
       layerOptions,
-      layer.config.id,
       (updatedProperties, selectedLayerId) => {
         const featureIndex = layer.data.features.findIndex(
           (f) => (f.properties as { id: string }).id === properties.id,
@@ -751,6 +730,7 @@ export class FantasyMapView extends ItemView {
       },
       undefined,
       this.getAllFeatures(properties.id),
+      layer.config.id,
     ).open();
   }
 
@@ -845,7 +825,6 @@ export class FantasyMapView extends ItemView {
             name,
             mapImagePath: imagePath,
             layers: [],
-            defaultLayerId: "",
             parentMapId: this.mapId ?? undefined,
             parentFeatureId: featureId,
           });
@@ -878,7 +857,6 @@ export class FantasyMapView extends ItemView {
             name,
             mapImagePath: imagePath,
             layers: [],
-            defaultLayerId: "",
             parentMapId: this.mapId ?? undefined,
             parentFeatureId: (feature.properties as { id: string }).id,
           };
@@ -956,8 +934,8 @@ export class FantasyMapView extends ItemView {
   }
 
   private async saveLayer(layer: LoadedLayer): Promise<void> {
-    const json = JSON.stringify(layer.data, null, 2);
-    await this.app.vault.adapter.write(layer.filePath, json);
+    layer.config.features = layer.data.features as LayerConfig["features"];
+    await this.plugin.saveSettings();
   }
 
   private refreshMapLayers(): void {

@@ -2,7 +2,11 @@ import { App, Modal } from "obsidian";
 import { mount, unmount } from "svelte";
 import type { MarkerProperties, PolygonProperties } from "../types";
 import { DEFAULT_MARKER_COLOR } from "../config";
-import { NoteSuggestModal, TagSuggestModal, FeatureSuggestModal } from "./link-note";
+import {
+  NoteSuggestModal,
+  TagSuggestModal,
+  FeatureSuggestModal,
+} from "./link-note";
 import FeatureForm from "../components/FeatureForm.svelte";
 
 type FeatureType = "marker" | "polygon";
@@ -33,7 +37,10 @@ export class FeatureModal extends Modal {
   private layerOptions: { id: string; name: string }[];
   private selectedLayerId: string;
   private onSubmit: (properties: FeatureProperties, layerId: string) => void;
-  private onLinkLocalMap?: (featureId: string, cb: (mapId: string) => void) => void;
+  private onLinkLocalMap?: (
+    featureId: string,
+    cb: (mapId: string) => void,
+  ) => void;
   private allFeatures: { id: string; name: string }[];
   private isEdit: boolean;
   private mountedForm: ReturnType<typeof mount> | null = null;
@@ -43,17 +50,19 @@ export class FeatureModal extends Modal {
     featureType: FeatureType,
     existingProperties: FeatureProperties | null,
     layerOptions: { id: string; name: string }[],
-    defaultLayerId: string,
     onSubmit: (properties: FeatureProperties, layerId: string) => void,
     onLinkLocalMap?: (featureId: string, cb: (mapId: string) => void) => void,
     allFeatures: { id: string; name: string }[] = [],
+    initialLayerId?: string,
   ) {
     super(app);
     this.featureType = featureType;
     this.isEdit = existingProperties !== null;
-    this.properties = existingProperties ? { ...existingProperties } : defaultProperties(featureType);
+    this.properties = existingProperties
+      ? { ...existingProperties }
+      : defaultProperties(featureType);
     this.layerOptions = layerOptions;
-    this.selectedLayerId = defaultLayerId || (layerOptions[0]?.id ?? "");
+    this.selectedLayerId = initialLayerId ?? layerOptions[0].id;
     this.onSubmit = onSubmit;
     this.onLinkLocalMap = onLinkLocalMap;
     this.allFeatures = allFeatures;
@@ -77,10 +86,14 @@ export class FeatureModal extends Modal {
           new TagSuggestModal(this.app, cb).open();
         },
         onLinkLocalMap: this.onLinkLocalMap
-          ? (cb: (mapId: string) => void) => { this.onLinkLocalMap!(this.properties.id, cb); }
+          ? (cb: (mapId: string) => void) => {
+              this.onLinkLocalMap!(this.properties.id, cb);
+            }
           : undefined,
         allFeatures: this.allFeatures,
-        onBrowseFeature: (cb: (featureId: string, featureName: string) => void) => {
+        onBrowseFeature: (
+          cb: (featureId: string, featureName: string) => void,
+        ) => {
           new FeatureSuggestModal(this.app, this.allFeatures, (feature) => {
             cb(feature.id, feature.name);
           }).open();
