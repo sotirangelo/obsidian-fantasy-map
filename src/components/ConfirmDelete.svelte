@@ -13,13 +13,7 @@
 <p>{description}</p>
 <div class="setting-item">
   <div class="setting-item-control">
-    <button class="pressable" onclick={onCancel}>Cancel</button>
-    <button class="pressable mod-warning" onclick={onConfirm}>Delete</button>
+    <button onclick={onCancel}>Cancel</button>
+    <button class="mod-warning" onclick={onConfirm}>Delete</button>
   </div>
 </div>
-
-<style>
-  .pressable {
-    cursor: pointer;
-  }
-</style>

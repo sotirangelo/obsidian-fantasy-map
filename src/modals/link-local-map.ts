@@ -26,6 +26,7 @@ export class LinkLocalMapModal extends Modal {
   }
 
   onOpen(): void {
+    this.containerEl.addClass("fantasy-map-modal");
     // Filter out current map and maps that already have a parent
     const linkableMaps = this.existingMaps.filter(
       (m) => m.id !== this.currentMapId && !m.parentMapId,

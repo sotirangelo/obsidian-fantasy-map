@@ -52,25 +52,25 @@
         {/if}
       </div>
       <div class="sidebar-buttons">
-        <button class="sidebar-btn" onclick={() => selected?.onEdit()}>
+        <button class="fantasy-map-btn" onclick={() => selected?.onEdit()}>
           <span use:icon={"pencil"}></span>
           Edit
         </button>
         <button
-          class="sidebar-btn sidebar-btn-danger"
+          class="fantasy-map-btn fantasy-map-btn-danger"
           onclick={() => selected?.onDelete()}
         >
           <span use:icon={"trash-2"}></span>
           Delete
         </button>
-        <button class="sidebar-btn" onclick={() => selected?.onAddRelation()}>
+        <button class="fantasy-map-btn" onclick={() => selected?.onAddRelation()}>
           <span use:icon={"link"}></span>
           Relation
         </button>
       </div>
       {#if selected.onOpenLocalMap}
         <button
-          class="sidebar-btn"
+          class="fantasy-map-btn"
           onclick={() => selected?.onOpenLocalMap?.()}
         >
           <span use:icon={"map"}></span>

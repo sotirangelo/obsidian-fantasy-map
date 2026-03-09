@@ -21,6 +21,7 @@ export class DeleteConfirmModal extends Modal {
   }
 
   onOpen(): void {
+    this.containerEl.addClass("fantasy-map-modal");
     this.mountedPanel = mount(ConfirmDelete, {
       target: this.contentEl,
       props: {

@@ -245,7 +245,7 @@
       value={note}
       oninput={(e) => (note = e.currentTarget.value)}
     />
-    <button style="cursor: pointer;" onclick={browseMainNote}>Browse</button>
+    <button onclick={browseMainNote}>Browse</button>
   </div>
 </div>
 
@@ -265,7 +265,7 @@
           value={n}
           oninput={(e) => (notes[i] = e.currentTarget.value)}
         />
-        <button style="cursor: pointer;" onclick={() => browseAdditionalNote(i)}
+        <button onclick={() => browseAdditionalNote(i)}
           >Browse</button
         >
         <button class="fantasy-map-btn-remove" onclick={() => removeNote(i)}
@@ -273,7 +273,7 @@
         >
       </div>
     {/each}
-    <button style="cursor: pointer;" onclick={addNote}>+ Add note</button>
+    <button onclick={addNote}>+ Add note</button>
   </div>
 </div>
 
@@ -303,8 +303,8 @@
         oninput={(e) => (tagInput = e.currentTarget.value)}
         onkeydown={handleTagKeydown}
       />
-      <button style="cursor: pointer;" onclick={addTag}>Add</button>
-      <button style="cursor: pointer;" onclick={browseTag}>Browse tags</button>
+      <button onclick={addTag}>Add</button>
+      <button onclick={browseTag}>Browse tags</button>
     </div>
   </div>
 </div>
@@ -333,7 +333,7 @@
           >
         </div>
       {/each}
-      <button style="cursor: pointer;" onclick={addRelation}
+      <button onclick={addRelation}
         >+ Add relation</button
       >
     </div>

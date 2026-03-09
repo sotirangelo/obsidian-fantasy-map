@@ -69,6 +69,7 @@ export class FeatureModal extends Modal {
   }
 
   onOpen(): void {
+    this.containerEl.addClass("fantasy-map-modal");
     this.mountedForm = mount(FeatureForm, {
       target: this.contentEl,
       props: {

@@ -15,6 +15,7 @@ export class SetScaleModal extends Modal {
   }
 
   onOpen(): void {
+    this.containerEl.addClass("fantasy-map-modal");
     this.mountedForm = mount(SetScaleForm, {
       target: this.contentEl,
       props: {
