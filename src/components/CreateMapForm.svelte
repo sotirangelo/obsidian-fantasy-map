@@ -10,6 +10,10 @@
   let imagePath = $state("");
   let error = $state("");
 
+  function clearError() {
+    if (error) error = "";
+  }
+
   function handleSubmit() {
     if (!name.trim()) {
       error = "Map name is required";
@@ -33,6 +37,7 @@
   }
 </script>
 
+<form onsubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
 <h2>Create New Map</h2>
 
 <div class="setting-item">
@@ -45,7 +50,7 @@
       type="text"
       placeholder="The Known World"
       value={name}
-      oninput={(e) => (name = e.currentTarget.value)}
+      oninput={(e) => { name = e.currentTarget.value; clearError(); }}
     />
   </div>
 </div>
@@ -60,9 +65,9 @@
       type="text"
       placeholder="maps/world.png"
       value={imagePath}
-      oninput={(e) => (imagePath = e.currentTarget.value)}
+      oninput={(e) => { imagePath = e.currentTarget.value; clearError(); }}
     />
-    <button onclick={browseImage}>Browse</button>
+    <button type="button" onclick={browseImage}>Browse</button>
   </div>
 </div>
 
@@ -72,6 +77,7 @@
 
 <div class="setting-item">
   <div class="setting-item-control">
-    <button class="mod-cta" onclick={handleSubmit}>Create Map</button>
+    <button type="submit" class="mod-cta">Create Map</button>
   </div>
 </div>
+</form>

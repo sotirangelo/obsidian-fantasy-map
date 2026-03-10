@@ -11,6 +11,10 @@
 
   const UNITS = ["km", "miles", "m", "ft", "leagues"];
 
+  function clearError() {
+    if (error) error = "";
+  }
+
   function handleSubmit() {
     const d = parseFloat(distance);
     if (!distance || isNaN(d) || d <= 0) {
@@ -22,6 +26,7 @@
   }
 </script>
 
+<form onsubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
 <h2>Set Map Scale</h2>
 <p class="setting-item-description">
   Enter the real-world distance between the two points you selected.
@@ -39,7 +44,7 @@
       step="any"
       placeholder="100"
       value={distance}
-      oninput={(e) => (distance = e.currentTarget.value)}
+      oninput={(e) => { distance = e.currentTarget.value; clearError(); }}
     />
     <select
       value={unit}
@@ -58,6 +63,7 @@
 
 <div class="setting-item">
   <div class="setting-item-control">
-    <button class="mod-cta" onclick={handleSubmit}>Save Scale</button>
+    <button type="submit" class="mod-cta">Save Scale</button>
   </div>
 </div>
+</form>

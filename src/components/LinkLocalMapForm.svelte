@@ -21,6 +21,10 @@
 
   let error = $state("");
 
+  function clearError() {
+    if (error) error = "";
+  }
+
   function handleSubmitNew() {
     if (!newName.trim()) {
       error = "Map name is required";
@@ -68,6 +72,7 @@
 </div>
 
 {#if tab === 'new'}
+  <form onsubmit={(e) => { e.preventDefault(); handleSubmitNew(); }}>
   <div class="setting-item">
     <div class="setting-item-info">
       <div class="setting-item-name">Name</div>
@@ -78,7 +83,7 @@
         type="text"
         placeholder="City of Waterdeep"
         value={newName}
-        oninput={(e) => (newName = e.currentTarget.value)}
+        oninput={(e) => { newName = e.currentTarget.value; clearError(); }}
       />
     </div>
   </div>
@@ -93,9 +98,9 @@
         type="text"
         placeholder="maps/waterdeep.png"
         value={newImagePath}
-        oninput={(e) => (newImagePath = e.currentTarget.value)}
+        oninput={(e) => { newImagePath = e.currentTarget.value; clearError(); }}
       />
-      <button onclick={browseImage}>Browse</button>
+      <button type="button" onclick={browseImage}>Browse</button>
     </div>
   </div>
 
@@ -105,13 +110,15 @@
 
   <div class="setting-item">
     <div class="setting-item-control">
-      <button class="mod-cta" onclick={handleSubmitNew}>Create & Link</button>
+      <button type="submit" class="mod-cta">Create & Link</button>
     </div>
   </div>
+  </form>
 {:else}
   {#if existingMaps.length === 0}
     <p class="setting-item-description">No linkable maps available.</p>
   {:else}
+    <form onsubmit={(e) => { e.preventDefault(); handleSubmitExisting(); }}>
     <div class="setting-item">
       <div class="setting-item-info">
         <div class="setting-item-name">Map</div>
@@ -135,9 +142,10 @@
 
     <div class="setting-item">
       <div class="setting-item-control">
-        <button class="mod-cta" onclick={handleSubmitExisting}>Link Map</button>
+        <button type="submit" class="mod-cta">Link Map</button>
       </div>
     </div>
+    </form>
   {/if}
 {/if}
 

@@ -58,6 +58,11 @@
   );
   let tagInput = $state("");
   let error = $state("");
+
+  function clearError() {
+    if (error) error = "";
+  }
+
   let relations = $state<RelationEntry[]>(
     untrack(() =>
       (initialProperties.relations ?? []).map((r) => ({
@@ -174,6 +179,7 @@
   }
 </script>
 
+<form onsubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
 <h2>{isEdit ? `Edit ${label}` : `Add ${label}`}</h2>
 
 <div class="setting-item">
@@ -188,7 +194,7 @@
       type="text"
       placeholder={featureType === "marker" ? "Waterdeep" : "The Dark Forest"}
       value={name}
-      oninput={(e) => (name = e.currentTarget.value)}
+      oninput={(e) => { name = e.currentTarget.value; clearError(); }}
     />
   </div>
 </div>
@@ -245,7 +251,7 @@
       value={note}
       oninput={(e) => (note = e.currentTarget.value)}
     />
-    <button onclick={browseMainNote}>Browse</button>
+    <button type="button" onclick={browseMainNote}>Browse</button>
   </div>
 </div>
 
@@ -265,15 +271,15 @@
           value={n}
           oninput={(e) => (notes[i] = e.currentTarget.value)}
         />
-        <button onclick={() => browseAdditionalNote(i)}
+        <button type="button" onclick={() => browseAdditionalNote(i)}
           >Browse</button
         >
-        <button class="fantasy-map-btn-remove" onclick={() => removeNote(i)}
+        <button type="button" class="fantasy-map-btn-remove" onclick={() => removeNote(i)}
           >×</button
         >
       </div>
     {/each}
-    <button onclick={addNote}>+ Add note</button>
+    <button type="button" onclick={addNote}>+ Add note</button>
   </div>
 </div>
 
@@ -288,7 +294,7 @@
         {#each tags as tag, i (i)}
           <span class="fantasy-map-tag">
             {tag}
-            <button class="fantasy-map-tag-remove" onclick={() => removeTag(i)}
+            <button type="button" class="fantasy-map-tag-remove" onclick={() => removeTag(i)}
               >×</button
             >
           </span>
@@ -303,8 +309,8 @@
         oninput={(e) => (tagInput = e.currentTarget.value)}
         onkeydown={handleTagKeydown}
       />
-      <button onclick={addTag}>Add</button>
-      <button onclick={browseTag}>Browse tags</button>
+      <button type="button" onclick={addTag}>Add</button>
+      <button type="button" onclick={browseTag}>Browse tags</button>
     </div>
   </div>
 </div>
@@ -328,12 +334,13 @@
           />
           <span class="fantasy-map-relation-name">{rel.featureName}</span>
           <button
+            type="button"
             class="fantasy-map-btn-remove"
             onclick={() => removeRelation(i)}>×</button
           >
         </div>
       {/each}
-      <button onclick={addRelation}
+      <button type="button" onclick={addRelation}
         >+ Add relation</button
       >
     </div>
@@ -351,9 +358,9 @@
     <div class="setting-item-control">
       {#if localMapId}
         <span class="fantasy-map-linked-label">Linked</span>
-        <button onclick={handleLinkLocalMap}>Change</button>
+        <button type="button" onclick={handleLinkLocalMap}>Change</button>
       {:else}
-        <button onclick={handleLinkLocalMap}>Link Local Map</button>
+        <button type="button" onclick={handleLinkLocalMap}>Link Local Map</button>
       {/if}
     </div>
   </div>
@@ -386,11 +393,12 @@
 
 <div class="setting-item">
   <div class="setting-item-control">
-    <button class="mod-cta" onclick={handleSubmit}>
+    <button type="submit" class="mod-cta">
       {isEdit ? "Save" : `Add ${label}`}
     </button>
   </div>
 </div>
+</form>
 
 <style>
   .fantasy-map-relations-control {
