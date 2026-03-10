@@ -54,13 +54,11 @@ The plugin supports common image formats including png, jpeg, and webp. Make sur
 
 ### Where are the map data and features stored?
 
-Currently, the plugin uses Obsidian's plugin data storage to save map configurations.
-
-Features, layers, and relationships are stored in a folder named `fantasy-map-layers` in your vault. Each map has its own folder containing multiple geojson files.
+Currently, the plugin uses Obsidian's plugin data storage to save map configurations,
+layers, features, and their properties. This means all your map data is stored within your vault.
 
 Storing the data in the vault allows for easy backup and portability,
 especially for users who sync their vault across devices.
-This might change in the future as we explore better storage options.
 
 ### Can I use this plugin for non-fantasy maps?
 
