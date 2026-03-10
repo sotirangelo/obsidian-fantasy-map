@@ -110,7 +110,9 @@ export class FantasyMapView extends ItemView {
 
     const config = this.getMapConfig();
     if (!config) {
-      const formWrapper = container.createDiv({ cls: "fantasy-map-create-form-wrapper" });
+      const formWrapper = container.createDiv({
+        cls: "fantasy-map-create-form-wrapper",
+      });
       this.createFormComponent = mount(CreateMapForm, {
         target: formWrapper,
         props: {
@@ -166,11 +168,29 @@ export class FantasyMapView extends ItemView {
       this.initializeMap(imageUrl, dimensions, config);
       this.loadAndDisplayLayers(config);
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Unknown error";
-      container.createEl("p", {
-        text: `Failed to load map: ${message}`,
-        cls: "fantasy-map-error",
-      });
+      const isNotFound =
+        error instanceof Error &&
+        error.message.startsWith("Map image not found");
+      if (isNotFound) {
+        const errorEl = container.createDiv({ cls: "fantasy-map-error" });
+        errorEl.createEl("p", {
+          text: `Map image not found: "${config.mapImagePath}". Please choose a new image.`,
+        });
+        const btn = errorEl.createEl("button", { text: "Browse for image…" });
+        btn.addEventListener("click", () => {
+          new ImageSuggestModal(this.app, (file) => {
+            config.mapImagePath = file.path;
+            void this.plugin.saveSettings().then(() => void this.renderMap());
+          }).open();
+        });
+      } else {
+        const message =
+          error instanceof Error ? error.message : "Unknown error";
+        container.createEl("p", {
+          text: `Failed to load map: ${message}`,
+          cls: "fantasy-map-error",
+        });
+      }
     }
 
     // Update the tab title
@@ -591,7 +611,6 @@ export class FantasyMapView extends ItemView {
   private getLayerOptions(): { id: string; name: string }[] {
     return this.layers.map((l) => ({ id: l.config.id, name: l.config.name }));
   }
-
 
   // --- Add Marker ---
 
