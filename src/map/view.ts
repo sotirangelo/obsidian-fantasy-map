@@ -757,7 +757,9 @@ export class FantasyMapView extends ItemView {
           this.refreshMapLayers();
         }
       },
-      undefined,
+      (featureId, cb) => {
+        this.openLinkLocalMapForNew(featureId, cb);
+      },
       this.getAllFeatures(properties.id),
       layer.config.id,
     ).open();
