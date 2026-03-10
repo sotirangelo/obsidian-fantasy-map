@@ -4,6 +4,7 @@ import {
   Menu,
   Notice,
   MarkdownRenderer,
+  normalizePath,
 } from "obsidian";
 import * as L from "leaflet";
 import "@geoman-io/leaflet-geoman-free";
@@ -224,12 +225,11 @@ export class FantasyMapView extends ItemView {
   // --- Image Loading ---
 
   private async getImageUrl(vaultPath: string): Promise<string> {
-    const adapter = this.app.vault.adapter;
-    const exists = await adapter.exists(vaultPath);
-    if (!exists) {
+    const file = this.app.vault.getFileByPath(normalizePath(vaultPath));
+    if (!file) {
       throw new Error(`Map image not found: ${vaultPath}`);
     }
-    const arrayBuffer = await adapter.readBinary(vaultPath);
+    const arrayBuffer = await this.app.vault.readBinary(file);
     const blob = new Blob([arrayBuffer], { type: "image/png" });
     return URL.createObjectURL(blob);
   }
