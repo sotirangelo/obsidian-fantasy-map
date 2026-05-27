@@ -9,7 +9,7 @@
     onCancelSetScale: () => void;
     onMeasure: (onDone: () => void) => void;
     onCancelMeasure: () => void;
-    onAddLayer: () => void;
+    onManageLayers: () => void;
     parentName?: string;
     onNavigateBack?: () => void;
   }
@@ -20,7 +20,7 @@
     onCancelSetScale,
     onMeasure,
     onCancelMeasure,
-    onAddLayer,
+    onManageLayers,
     parentName,
     onNavigateBack,
   }: Props = $props();
@@ -172,7 +172,7 @@
   >
     <span class="map-control-icon" use:icon={"ruler"}></span>
   </button>
-  <button class="map-control-btn" aria-label="Add Layer" onclick={onAddLayer}>
+  <button class="map-control-btn" aria-label="Manage Layers" onclick={onManageLayers}>
     <span class="map-control-icon" use:icon={"layers"}></span>
   </button>
   <button

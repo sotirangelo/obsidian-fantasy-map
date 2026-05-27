@@ -28,6 +28,7 @@ import { createMarkerFromFeature } from "./markers";
 import {
   FeatureModal,
   FeatureSuggestModal,
+  ManageLayersModal,
   DeleteConfirmModal,
   LinkLocalMapModal,
   NameInputModal,
@@ -343,7 +344,7 @@ export class FantasyMapView extends ItemView {
           this.measure?.start(onDone);
         },
         onCancelMeasure: () => this.measure?.cleanup(),
-        onAddLayer: () => this.promptAddLayer(config),
+        onManageLayers: () => this.promptManageLayers(config),
         parentName:
           parentConfig?.name ?? (config.parentMapId ? "Parent Map" : undefined),
         onNavigateBack: config.parentMapId
@@ -421,15 +422,20 @@ export class FantasyMapView extends ItemView {
   private promptAddLayer(config: MapConfig, onCreated?: () => void): void {
     const defaultName = config.name ? `${config.name} Layer` : "New Layer";
     new NameInputModal(this.app, defaultName, (name) => {
-      const promise = this.createLayer(config, name);
+      const id = window.crypto.randomUUID();
+      const promise = this.createLayer(config, id, name);
       if (onCreated) void promise.then(onCreated);
       else void promise;
     }).open();
   }
 
-  private async createLayer(config: MapConfig, name: string): Promise<void> {
+  private async createLayer(
+    config: MapConfig,
+    id: string,
+    name: string,
+  ): Promise<void> {
     const newLayerConfig: LayerConfig = {
-      id: window.crypto.randomUUID(),
+      id,
       name,
       features: [],
     };
@@ -445,6 +451,47 @@ export class FantasyMapView extends ItemView {
     }
 
     new Notice(`Layer "${name}" added`);
+  }
+
+  private promptManageLayers(config: MapConfig): void {
+    const layerEntries = this.layers.map((l) => ({
+      id: l.config.id,
+      name: l.config.name,
+      featureCount: l.data.features.length,
+    }));
+    new ManageLayersModal(
+      this.app,
+      layerEntries,
+      (id, name) => void this.createLayer(config, id, name),
+      (id, newName) => this.renameLayer(id, newName),
+      (id) => {
+        const layer = this.layers.find((l) => l.config.id === id);
+        if (layer) this.deleteLayer(config, layer);
+      },
+    ).open();
+  }
+
+  private renameLayer(id: string, newName: string): void {
+    const layer = this.layers.find((l) => l.config.id === id);
+    if (!layer) return;
+    layer.config.name = newName;
+    if (layer.leafletLayer) {
+      this.layerControl?.removeLayer(layer.leafletLayer);
+      this.layerControl?.addOverlay(layer.leafletLayer, newName);
+    }
+    void this.plugin.saveSettings();
+  }
+
+  private deleteLayer(config: MapConfig, layer: LoadedLayer): void {
+    config.layers = config.layers.filter((l) => l.id !== layer.config.id);
+    if (layer.leafletLayer) {
+      this.layerControl?.removeLayer(layer.leafletLayer);
+      layer.leafletLayer.remove();
+    }
+    this.layers = this.layers.filter((l) => l.config.id !== layer.config.id);
+    this.selectFeature(null);
+    void this.plugin.saveSettings();
+    new Notice(`Layer "${layer.config.name}" deleted`);
   }
 
   private loadAndDisplayLayers(config: MapConfig): void {
