@@ -70,7 +70,10 @@ export class SelectionManager {
     if (this.selectedLayer) {
       if (this.selectedLayer instanceof L.Marker) {
         const el = this.selectedLayer.getElement();
-        el?.classList.remove("fantasy-map-marker--selected");
+        if (el) {
+          el.classList.remove("fantasy-map-marker--selected");
+          el.style.zIndex = "";
+        }
       } else if (this.selectedLayer instanceof L.Polygon) {
         const feature = (
           this.selectedLayer as unknown as { feature?: PolygonFeature }
@@ -140,7 +143,10 @@ export class SelectionManager {
         interactive: false,
       }).addTo(this.map);
       const el = leafletLayer.getElement();
-      el?.classList.add("fantasy-map-marker--selected");
+      if (el) {
+        el.classList.add("fantasy-map-marker--selected");
+        el.style.zIndex = "1000";
+      }
     } else if (leafletLayer instanceof L.Polygon) {
       const feature = (leafletLayer as unknown as { feature?: PolygonFeature })
         .feature;

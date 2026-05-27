@@ -82,7 +82,7 @@
 }
 
 .sidebar-marker-description {
-  margin: 0.25em 0 0 0;
+  margin: 0.25em 0 0;
   color: var(--text-muted);
   font-size: 0.9em;
 }
@@ -142,7 +142,7 @@
 .sidebar-note-error {
   font-size: 0.85em;
   color: var(--text-muted);
-  margin: 0 0 0.5em 0;
+  margin: 0 0 0.5em;
 }
 
 .sidebar-note-error {
@@ -344,7 +344,6 @@
 .fantasy-map-marker--selected {
   filter: drop-shadow(0 0 6px var(--text-accent))
     drop-shadow(0 0 12px var(--text-accent));
-  z-index: 1000 !important;
 }
 
 .fantasy-map-polygon--selected {

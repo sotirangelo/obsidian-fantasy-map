@@ -32,7 +32,7 @@ export class NameInputModal extends Modal {
       text.inputEl.addEventListener("keydown", (e) => {
         if (e.key === "Enter") submit();
       });
-      setTimeout(() => {
+      activeWindow.setTimeout(() => {
         text.inputEl.focus();
       }, 0);
     });

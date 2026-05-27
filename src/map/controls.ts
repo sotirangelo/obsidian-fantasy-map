@@ -25,16 +25,13 @@ export function createScaleBar(
     const { distance, barPixels } = computeBar(pixelsPerUnit, 200);
     scaleBarDiv.replaceChildren();
 
-    const title = document.createElement("div");
-    title.className = "scale-bar-title";
+    const title = activeDocument.createDiv({ cls: "scale-bar-title" });
     title.textContent = "Scale";
 
-    const line = document.createElement("div");
-    line.className = "scale-bar-line";
+    const line = activeDocument.createDiv({ cls: "scale-bar-line" });
     line.style.width = `${Math.round(barPixels).toString()}px`;
 
-    const label = document.createElement("div");
-    label.className = "scale-bar-label";
+    const label = activeDocument.createDiv({ cls: "scale-bar-label" });
     label.textContent = `${distance.toString()} ${scale.unit}`;
 
     scaleBarDiv.append(title, line, label);
