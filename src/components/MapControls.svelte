@@ -205,7 +205,7 @@
   <button
     class="map-control-btn"
     class:map-control-btn--active={activeMode === "edit"}
-    aria-label="Edit Layers"
+    aria-label="Edit shape vertices"
     onclick={toggleEdit}
   >
     <span class="map-control-icon" use:icon={"pencil"}></span>
@@ -213,7 +213,7 @@
   <button
     class="map-control-btn"
     class:map-control-btn--active={activeMode === "drag"}
-    aria-label="Drag Layers"
+    aria-label="Move shapes"
     onclick={toggleDrag}
   >
     <span class="map-control-icon" use:icon={"move"}></span>
@@ -221,7 +221,7 @@
   <button
     class="map-control-btn map-control-btn--danger"
     class:map-control-btn--active={activeMode === "removal"}
-    aria-label="Remove Layers"
+    aria-label="Delete shapes"
     onclick={toggleRemoval}
   >
     <span class="map-control-icon" use:icon={"trash-2"}></span>
