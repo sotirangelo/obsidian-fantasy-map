@@ -1,7 +1,7 @@
 import { Plugin } from "obsidian";
 import * as v from "valibot";
 import { FantasyMapView, FANTASY_MAP_VIEW } from "./map/view";
-import { MapPickerModal, CreateMapModal } from "./modals";
+import { MapPickerModal, CreateMapModal, DeleteConfirmModal } from "./modals";
 import { DEFAULT_SETTINGS } from "./types";
 import type { FantasyMapSettings } from "./types";
 import { FantasyMapSettingsSchema } from "./schemas";
@@ -37,6 +37,14 @@ export default class FantasyMapPlugin extends Plugin {
       },
     });
 
+    this.addCommand({
+      id: "delete-map",
+      name: "Delete map",
+      callback: () => {
+        this.openDeleteMapPicker();
+      },
+    });
+
   }
 
   private openCreateMapModal(): void {
@@ -50,6 +58,63 @@ export default class FantasyMapPlugin extends Plugin {
       this.settings.maps.push(newMap);
       void this.saveSettings().then(() => this.openMap(newMap.id));
     }).open();
+  }
+
+  private openDeleteMapPicker(): void {
+    const { maps } = this.settings;
+    if (!maps.length) return;
+
+    const parentMap = new Map(maps.map((m) => [m.id, m.name || m.id]));
+    const displayMaps = maps.map((m) => ({
+      ...m,
+      displayName: m.parentMapId
+        ? `↳ ${m.name || m.id} (in ${parentMap.get(m.parentMapId) ?? m.parentMapId})`
+        : m.name || m.id,
+    }));
+
+    new MapPickerModal(this.app, displayMaps, (map) => {
+      const childCount = maps.filter((m) => m.parentMapId === map.id).length;
+      const description =
+        childCount > 0
+          ? `This will also delete ${String(childCount)} linked local map${childCount > 1 ? "s" : ""}. This cannot be undone.`
+          : "This cannot be undone.";
+
+      new DeleteConfirmModal(
+        this.app,
+        `Delete "${map.name || map.id}"?`,
+        description,
+        () => {
+          void this.deleteMap(map.id);
+        },
+      ).open();
+    }).open();
+  }
+
+  private async deleteMap(mapId: string): Promise<void> {
+    const idsToRemove = new Set<string>();
+    idsToRemove.add(mapId);
+    // Collect all descendants
+    let changed = true;
+    while (changed) {
+      changed = false;
+      for (const m of this.settings.maps) {
+        if (m.parentMapId && idsToRemove.has(m.parentMapId) && !idsToRemove.has(m.id)) {
+          idsToRemove.add(m.id);
+          changed = true;
+        }
+      }
+    }
+
+    this.settings.maps = this.settings.maps.filter((m) => !idsToRemove.has(m.id));
+    await this.saveSettings();
+
+    // Close the view if it's showing a deleted map
+    for (const leaf of this.app.workspace.getLeavesOfType(FANTASY_MAP_VIEW)) {
+      const view = leaf.view as FantasyMapView;
+      if (view.mapId && idsToRemove.has(view.mapId)) {
+        leaf.detach();
+      }
+    }
   }
 
   private openMapPicker(): void {

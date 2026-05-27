@@ -8,21 +8,23 @@ type PickerItem =
 export class MapPickerModal extends FuzzySuggestModal<PickerItem> {
   private items: PickerItem[];
   private onChooseMap: (map: MapConfig) => void;
-  private onCreateMap: () => void;
+  private onCreateMap: (() => void) | undefined;
 
   constructor(
     app: App,
     maps: (MapConfig & { displayName?: string })[],
     onChoose: (map: MapConfig) => void,
-    onCreate: () => void,
+    onCreate?: () => void,
   ) {
     super(app);
     this.onChooseMap = onChoose;
     this.onCreateMap = onCreate;
-    this.setPlaceholder("Choose a map or create a new one");
+    this.setPlaceholder(
+      onCreate ? "Choose a map or create a new one" : "Choose a map",
+    );
 
     this.items = [
-      { kind: "create" },
+      ...(onCreate ? [{ kind: "create" as const }] : []),
       ...maps.map((m) => ({
         kind: "map" as const,
         map: m,
@@ -44,7 +46,7 @@ export class MapPickerModal extends FuzzySuggestModal<PickerItem> {
 
   onChooseItem(item: PickerItem): void {
     if (item.kind === "create") {
-      this.onCreateMap();
+      this.onCreateMap?.();
     } else {
       this.onChooseMap(item.map);
     }
