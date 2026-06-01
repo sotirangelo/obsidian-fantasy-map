@@ -59,6 +59,12 @@ export class LayerManager {
             direction: "center",
             className: "fantasy-map-name-tooltip",
           });
+          leafletFeature.on("pm:drag", () => {
+            const tooltip = leafletFeature.getTooltip();
+            if (tooltip) {
+              tooltip.setLatLng((leafletFeature as L.Polygon).getBounds().getCenter());
+            }
+          });
           this.sidebarBuilder.attachPolygonInteraction(
             feature as PolygonFeature,
             leafletFeature as L.Polygon,
