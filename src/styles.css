@@ -436,3 +436,8 @@
   filter: drop-shadow(0 0 1.5px var(--background-primary))
     drop-shadow(0 0 1.5px var(--background-primary));
 }
+
+.fantasy-map-feature--dimmed {
+  opacity: 0.2 !important;
+  transition: opacity 150ms ease;
+}

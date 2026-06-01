@@ -82,8 +82,9 @@ export class SidebarStateBuilder {
       },
       onSearchTag: (tag: string) => {
         const search =
-          this.ctx.app.internalPlugins?.getPluginById?.("global-search")
-            ?.instance;
+          this.ctx.app.internalPlugins?.getPluginById?.(
+            "global-search",
+          )?.instance;
         search?.openGlobalSearch(`tag:${tag}`);
       },
       onEdit: () => {

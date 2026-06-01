@@ -14,7 +14,7 @@ export class SelectionManager {
   private selectionRing: L.CircleMarker | null = null;
   private relationHighlights: L.CircleMarker[] = [];
   private relationArrows: L.Layer[] = [];
-  private hiddenLayers: { layer: L.Layer; parent: L.GeoJSON }[] = [];
+  private dimmedLayers: L.Layer[] = [];
 
   constructor(map: L.Map) {
     this.map = map;
@@ -46,16 +46,16 @@ export class SelectionManager {
       layers,
     );
 
-    this.hideUnrelatedFeatures(featureId, state, layers);
+    this.dimUnrelatedFeatures(featureId, state, layers);
   }
 
   clear(): void {
     this.clearRelationArrows();
 
-    for (const { layer, parent } of this.hiddenLayers) {
-      parent.addLayer(layer);
+    for (const layer of this.dimmedLayers) {
+      this.setLayerDimmed(layer, false);
     }
-    this.hiddenLayers = [];
+    this.dimmedLayers = [];
 
     for (const ring of this.relationHighlights) {
       this.map.removeLayer(ring);
@@ -95,7 +95,7 @@ export class SelectionManager {
     }
   }
 
-  private hideUnrelatedFeatures(
+  private dimUnrelatedFeatures(
     selectedId: string,
     state: SidebarState,
     layers: LoadedLayer[],
@@ -111,22 +111,25 @@ export class SelectionManager {
 
     for (const loadedLayer of layers) {
       if (!loadedLayer.leafletLayer) continue;
-      const toHide: L.Layer[] = [];
       loadedLayer.leafletLayer.eachLayer((subLayer) => {
         const f = (subLayer as unknown as { feature?: MapFeature }).feature;
         const id = (f?.properties as { id?: string } | undefined)?.id;
         if (id && !relatedIds.has(id)) {
-          toHide.push(subLayer);
+          this.setLayerDimmed(subLayer, true);
+          this.dimmedLayers.push(subLayer);
         }
       });
-      for (const sub of toHide) {
-        loadedLayer.leafletLayer.removeLayer(sub);
-        this.hiddenLayers.push({
-          layer: sub,
-          parent: loadedLayer.leafletLayer,
-        });
-      }
     }
+  }
+
+  private setLayerDimmed(layer: L.Layer, dimmed: boolean): void {
+    const cls = "fantasy-map-feature--dimmed";
+    const el = (layer as L.Marker | L.Path).getElement();
+    el?.classList.toggle(cls, dimmed);
+    const tooltipEl = (
+      layer as { getTooltip?: () => L.Tooltip | undefined }
+    ).getTooltip?.()?.getElement();
+    tooltipEl?.classList.toggle(cls, dimmed);
   }
 
   private highlightSelected(leafletLayer: L.Layer): void {
