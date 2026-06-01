@@ -34,7 +34,6 @@ const context = await esbuild.context({
     "@lezer/lr",
     ...builtinModules,
   ],
-  define: { __DEV__: String(!isProdBuild) },
   format: "cjs",
   target: "es2021",
   logLevel: "info",

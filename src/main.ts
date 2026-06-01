@@ -1,12 +1,7 @@
 import { Plugin, TAbstractFile } from "obsidian";
 import * as v from "valibot";
 import { FantasyMapView, FANTASY_MAP_VIEW } from "./map/view";
-import {
-  MapPickerModal,
-  CreateMapModal,
-  DeleteConfirmModal,
-  DevModal,
-} from "./modals";
+import { MapPickerModal, CreateMapModal, DeleteConfirmModal } from "./modals";
 import { DEFAULT_SETTINGS } from "./types";
 import type { FantasyMapSettings } from "./types";
 import { FantasyMapSettingsSchema } from "./schemas";
@@ -25,12 +20,6 @@ export default class FantasyMapPlugin extends Plugin {
     this.addRibbonIcon("map", "Open map", () => {
       this.openMapPicker();
     });
-
-    if (__DEV__) {
-      this.addRibbonIcon("bug", "Dev tools", () => {
-        return new DevModal(this.app).open();
-      });
-    }
 
     this.addCommand({
       id: "open-map",
