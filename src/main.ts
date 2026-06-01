@@ -1,7 +1,12 @@
 import { Plugin } from "obsidian";
 import * as v from "valibot";
 import { FantasyMapView, FANTASY_MAP_VIEW } from "./map/view";
-import { MapPickerModal, CreateMapModal, DeleteConfirmModal } from "./modals";
+import {
+  MapPickerModal,
+  CreateMapModal,
+  DeleteConfirmModal,
+  DevModal,
+} from "./modals";
 import { DEFAULT_SETTINGS } from "./types";
 import type { FantasyMapSettings } from "./types";
 import { FantasyMapSettingsSchema } from "./schemas";
@@ -20,6 +25,12 @@ export default class FantasyMapPlugin extends Plugin {
     this.addRibbonIcon("map", "Open map", () => {
       this.openMapPicker();
     });
+
+    if (__DEV__) {
+      this.addRibbonIcon("bug", "Dev tools", () => {
+        return new DevModal(this.app).open();
+      });
+    }
 
     this.addCommand({
       id: "open-map",
@@ -44,7 +55,6 @@ export default class FantasyMapPlugin extends Plugin {
         this.openDeleteMapPicker();
       },
     });
-
   }
 
   private openCreateMapModal(): void {
@@ -98,14 +108,20 @@ export default class FantasyMapPlugin extends Plugin {
     while (changed) {
       changed = false;
       for (const m of this.settings.maps) {
-        if (m.parentMapId && idsToRemove.has(m.parentMapId) && !idsToRemove.has(m.id)) {
+        if (
+          m.parentMapId &&
+          idsToRemove.has(m.parentMapId) &&
+          !idsToRemove.has(m.id)
+        ) {
           idsToRemove.add(m.id);
           changed = true;
         }
       }
     }
 
-    this.settings.maps = this.settings.maps.filter((m) => !idsToRemove.has(m.id));
+    this.settings.maps = this.settings.maps.filter(
+      (m) => !idsToRemove.has(m.id),
+    );
     await this.saveSettings();
 
     // Close the view if it's showing a deleted map
