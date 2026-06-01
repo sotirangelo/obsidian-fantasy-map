@@ -1,58 +1,44 @@
-import {
-  ItemView,
-  WorkspaceLeaf,
-  Menu,
-  Notice,
-  MarkdownRenderer,
-  normalizePath,
-} from "obsidian";
+import { ItemView, WorkspaceLeaf, Notice, Menu } from "obsidian";
 import * as L from "leaflet";
 import "@geoman-io/leaflet-geoman-free";
 import { mount, unmount } from "svelte";
 import type FantasyMapPlugin from "../main";
 import type {
+  LayerConfig,
   LoadedLayer,
   MapConfig,
-  LayerConfig,
-  MapFeature,
-  MarkerFeature,
-  PolygonFeature,
-  MarkerProperties,
-  PolygonProperties,
-  ObsidianApp,
   SidebarState,
 } from "../types";
-import { loadConfiguredLayers } from "./layers";
-import { createMarkerFromFeature } from "./markers";
-import {
-  FeatureModal,
-  FeatureSuggestModal,
-  ManageLayersModal,
-  DeleteConfirmModal,
-  LinkLocalMapModal,
-  NameInputModal,
-  RelationLabelModal,
-} from "../modals";
 import { MAP_CONFIG } from "../config";
 import { pickNiceDistance } from "./scales";
 import { createScaleBar } from "./controls";
 import { CalibrationHandler } from "./calibration";
 import { MeasureHandler } from "./measure";
-import { SelectionManager, findIncomingRelations } from "./selection";
+import { SelectionManager } from "./selection";
 import Sidebar from "../components/Sidebar.svelte";
 import MapControls from "../components/MapControls.svelte";
 import { ImageSuggestModal, renderCreateMapForm } from "../modals/create-map";
+import { loadImageAsBlobUrl, getImageDimensions } from "./image";
+import type { MapContext } from "./context";
+import { LocalMapLinker } from "./local-map";
+import { FeatureController } from "./feature-controller";
+import { SidebarStateBuilder } from "./sidebar-state";
+import { LayerManager } from "./layer-management";
 
 export const FANTASY_MAP_VIEW = "fantasy-map-view";
 
 export class FantasyMapView extends ItemView {
   plugin: FantasyMapPlugin;
-  map: L.Map | null = null;
-  layers: LoadedLayer[] = [];
-  mapContainerEl: HTMLDivElement | null = null;
   mapId: string | null = null;
+  mapContainerEl: HTMLDivElement | null = null;
+
+  private map: L.Map | null = null;
+  private layers: LoadedLayer[] = [];
+  private selection: SelectionManager | null = null;
+  private calibration: CalibrationHandler | null = null;
+  private measure: MeasureHandler | null = null;
+
   private blobUrl: string | null = null;
-  private layerControl: L.Control.Layers | null = null;
   private sidebarEl: HTMLDivElement | null = null;
   private sidebarComponent: ReturnType<typeof mount> | null = null;
   private controlsEl: HTMLDivElement | null = null;
@@ -60,9 +46,6 @@ export class FantasyMapView extends ItemView {
   private updateSidebar: ((state: SidebarState | null) => void) | null = null;
   private scaleBarControl: L.Control | null = null;
   private updateScaleBar: (() => void) | null = null;
-  private calibration: CalibrationHandler | null = null;
-  private measure: MeasureHandler | null = null;
-  private selection: SelectionManager | null = null;
 
   constructor(leaf: WorkspaceLeaf, plugin: FantasyMapPlugin) {
     super(leaf);
@@ -150,11 +133,10 @@ export class FantasyMapView extends ItemView {
     });
 
     try {
-      const imageUrl = await this.getImageUrl(config.mapImagePath);
+      const imageUrl = await loadImageAsBlobUrl(this.app, config.mapImagePath);
       this.blobUrl = imageUrl;
-      const dimensions = await this.getImageDimensions(imageUrl);
+      const dimensions = await getImageDimensions(imageUrl);
       this.initializeMap(imageUrl, dimensions, config);
-      this.loadAndDisplayLayers(config);
     } catch (error) {
       const isNotFound =
         error instanceof Error &&
@@ -181,7 +163,6 @@ export class FantasyMapView extends ItemView {
       }
     }
 
-    // Update the tab title
     (this.leaf as unknown as { updateHeader?: () => void }).updateHeader?.();
   }
 
@@ -211,7 +192,6 @@ export class FantasyMapView extends ItemView {
     this.sidebarEl = null;
     this.controlsEl = null;
     this.layers = [];
-    this.layerControl = null;
     this.scaleBarControl = null;
     this.updateScaleBar = null;
     this.selection?.clear();
@@ -226,63 +206,34 @@ export class FantasyMapView extends ItemView {
     await Promise.resolve(this.cleanup());
   }
 
-  // --- Image Loading ---
-
-  private async getImageUrl(vaultPath: string): Promise<string> {
-    const file = this.app.vault.getFileByPath(normalizePath(vaultPath));
-    if (!file) {
-      throw new Error(`Map image not found: ${vaultPath}`);
-    }
-    const arrayBuffer = await this.app.vault.readBinary(file);
-    const blob = new Blob([arrayBuffer], { type: "image/png" });
-    return URL.createObjectURL(blob);
-  }
-
-  private getImageDimensions(
-    url: string,
-  ): Promise<{ width: number; height: number }> {
-    return new Promise((resolve, reject) => {
-      const img = new Image();
-      img.onload = () => {
-        resolve({ width: img.naturalWidth, height: img.naturalHeight });
-      };
-      img.onerror = () => {
-        reject(new Error("Failed to load image for dimension detection"));
-      };
-      img.src = url;
-    });
-  }
-
-  // --- Map Initialization ---
-
   private initializeMap(
     imageUrl: string,
     dimensions: { width: number; height: number },
     config: MapConfig,
   ): void {
-    if (!this.mapContainerEl) return;
+    if (!this.mapContainerEl || !this.mapId) return;
 
     const bounds: L.LatLngBoundsExpression = [
       [0, 0],
       [dimensions.height, dimensions.width],
     ];
 
-    this.map = L.map(this.mapContainerEl, {
+    const map = L.map(this.mapContainerEl, {
       crs: L.CRS.Simple,
       zoomControl: false,
       ...MAP_CONFIG,
     });
+    this.map = map;
 
-    L.imageOverlay(imageUrl, bounds).addTo(this.map);
-    this.map.fitBounds(bounds);
+    L.imageOverlay(imageUrl, bounds).addTo(map);
+    map.fitBounds(bounds);
 
-    this.layerControl = L.control
+    const layerControl = L.control
       .layers({}, {}, { position: "topright" })
-      .addTo(this.map);
+      .addTo(map);
 
-    // Initialize calibration and measure handlers
-    this.calibration = new CalibrationHandler(
-      this.map,
+    const calibration = new CalibrationHandler(
+      map,
       () => this.app,
       (p1, p2, pxDist, realDistance, unit) => {
         const cfg = this.getMapConfig();
@@ -302,11 +253,46 @@ export class FantasyMapView extends ItemView {
         });
       },
     );
+    this.calibration = calibration;
 
-    this.measure = new MeasureHandler(this.map, () => this.getMapConfig());
-    this.selection = new SelectionManager(this.map);
+    const measure = new MeasureHandler(map, () => this.getMapConfig());
+    this.measure = measure;
 
-    // Mount Svelte map controls
+    const selection = new SelectionManager(map);
+    this.selection = selection;
+
+    const ctx: MapContext = {
+      app: this.app,
+      plugin: this.plugin,
+      mapId: this.mapId,
+      config,
+      map,
+      layers: this.layers,
+      layerControl,
+      selection,
+      selectFeature: (state, leafletLayer) =>
+        this.selectFeature(state, leafletLayer),
+      saveLayer: (layer) => this.saveLayer(layer),
+      refreshMapLayers: () => this.refreshMapLayers(),
+    };
+
+    const localMapLinker = new LocalMapLinker(ctx);
+    // promptAddLayer closes over layerMgr declared below; only invoked on user
+    // action after init, so the binding is always set by call time.
+    let layerMgr!: LayerManager;
+    const featureCtrl = new FeatureController(
+      ctx,
+      localMapLinker,
+      (onCreated) => layerMgr.promptAdd(onCreated),
+    );
+    const sidebarBuilder = new SidebarStateBuilder(
+      ctx,
+      featureCtrl,
+      localMapLinker,
+      this,
+    );
+    layerMgr = new LayerManager(ctx, sidebarBuilder);
+
     const parentConfig = config.parentMapId
       ? this.plugin.settings.maps.find((m) => m.id === config.parentMapId)
       : undefined;
@@ -318,16 +304,12 @@ export class FantasyMapView extends ItemView {
     this.controlsComponent = mount(MapControls, {
       target: this.controlsEl,
       props: {
-        map: this.map,
-        onSetScale: (onDone: () => void) => {
-          this.calibration?.start(onDone);
-        },
-        onCancelSetScale: () => this.calibration?.cancel(),
-        onMeasure: (onDone: () => void) => {
-          this.measure?.start(onDone);
-        },
-        onCancelMeasure: () => this.measure?.cleanup(),
-        onManageLayers: () => this.promptManageLayers(config),
+        map,
+        onSetScale: (onDone: () => void) => calibration.start(onDone),
+        onCancelSetScale: () => calibration.cancel(),
+        onMeasure: (onDone: () => void) => measure.start(onDone),
+        onCancelMeasure: () => measure.cleanup(),
+        onManageLayers: () => layerMgr.promptManage(),
         parentName:
           parentConfig?.name ?? (config.parentMapId ? "Parent Map" : undefined),
         onNavigateBack: config.parentMapId
@@ -336,47 +318,43 @@ export class FantasyMapView extends ItemView {
       },
     });
 
-    // Scale bar (if scale already configured)
     if (config.scale) {
       this.renderScaleBar(config);
     }
 
-    // When a shape is created via the Geoman toolbar
-    this.map.on("pm:create", (e: { shape?: string; layer: L.Layer }) => {
+    map.on("pm:create", (e: { shape?: string; layer: L.Layer }) => {
       if (e.shape === "Marker") {
         const marker = e.layer as L.Marker;
         const latlng = marker.getLatLng();
-        this.map?.removeLayer(marker);
-        this.openAddMarkerModal(latlng);
+        map.removeLayer(marker);
+        featureCtrl.openAddMarker(latlng);
       } else if (e.shape === "Polygon" || e.shape === "Rectangle") {
         const polygon = e.layer as L.Polygon;
-        this.map?.removeLayer(polygon);
-        this.openAddPolygonModal(polygon);
+        map.removeLayer(polygon);
+        featureCtrl.openAddPolygon(polygon);
       }
     });
 
-    // Click on map background
-    this.map.on("click", (e: L.LeafletMouseEvent) => {
-      if (this.calibration && this.calibration.mode !== "off") {
-        this.calibration.handleClick(e.latlng);
+    map.on("click", (e: L.LeafletMouseEvent) => {
+      if (calibration.mode !== "off") {
+        calibration.handleClick(e.latlng);
         return;
       }
-      if (this.measure && this.measure.mode !== "off") {
-        this.measure.handleClick(e.latlng);
+      if (measure.mode !== "off") {
+        measure.handleClick(e.latlng);
         return;
       }
       this.selectFeature(null);
     });
 
-    // Right-click to add a marker
-    this.map.on("contextmenu", (e: L.LeafletMouseEvent) => {
-      if (this.calibration && this.calibration.mode !== "off") return;
-      if (this.measure && this.measure.mode !== "off") return;
-      this.showAddMarkerMenu(e);
+    map.on("contextmenu", (e: L.LeafletMouseEvent) => {
+      if (calibration.mode !== "off") return;
+      if (measure.mode !== "off") return;
+      this.showAddMarkerMenu(e, featureCtrl);
     });
-  }
 
-  // --- Scale Bar ---
+    layerMgr.loadAndDisplay();
+  }
 
   private renderScaleBar(config: MapConfig): void {
     if (!this.map || !config.scale) return;
@@ -400,257 +378,16 @@ export class FantasyMapView extends ItemView {
     this.map.on("zoomend", this.updateScaleBar);
   }
 
-  // --- Layer Management ---
-
-  private promptAddLayer(config: MapConfig, onCreated?: () => void): void {
-    const defaultName = config.name ? `${config.name} Layer` : "New Layer";
-    new NameInputModal(this.app, defaultName, (name) => {
-      const id = window.crypto.randomUUID();
-      const promise = this.createLayer(config, id, name);
-      if (onCreated) void promise.then(onCreated);
-      else void promise;
-    }).open();
-  }
-
-  private async createLayer(
-    config: MapConfig,
-    id: string,
-    name: string,
-  ): Promise<void> {
-    const newLayerConfig: LayerConfig = {
-      id,
-      name,
-      features: [],
-    };
-
-    config.layers.push(newLayerConfig);
-    await this.plugin.saveSettings();
-
-    const loaded = loadConfiguredLayers([newLayerConfig]);
-
-    for (const layer of loaded) {
-      this.layers.push(layer);
-      this.addLayerToMap(layer);
-    }
-
-    new Notice(`Layer "${name}" added`);
-  }
-
-  private promptManageLayers(config: MapConfig): void {
-    const layerEntries = this.layers.map((l) => ({
-      id: l.config.id,
-      name: l.config.name,
-      featureCount: l.data.features.length,
-    }));
-    new ManageLayersModal(
-      this.app,
-      layerEntries,
-      (id, name) => void this.createLayer(config, id, name),
-      (id, newName) => this.renameLayer(id, newName),
-      (id) => {
-        const layer = this.layers.find((l) => l.config.id === id);
-        if (layer) this.deleteLayer(config, layer);
-      },
-    ).open();
-  }
-
-  private renameLayer(id: string, newName: string): void {
-    const layer = this.layers.find((l) => l.config.id === id);
-    if (!layer) return;
-    layer.config.name = newName;
-    if (layer.leafletLayer) {
-      this.layerControl?.removeLayer(layer.leafletLayer);
-      this.layerControl?.addOverlay(layer.leafletLayer, newName);
-    }
-    void this.plugin.saveSettings();
-  }
-
-  private deleteLayer(config: MapConfig, layer: LoadedLayer): void {
-    config.layers = config.layers.filter((l) => l.id !== layer.config.id);
-    if (layer.leafletLayer) {
-      this.layerControl?.removeLayer(layer.leafletLayer);
-      layer.leafletLayer.remove();
-    }
-    this.layers = this.layers.filter((l) => l.config.id !== layer.config.id);
-    this.selectFeature(null);
-    void this.plugin.saveSettings();
-    new Notice(`Layer "${layer.config.name}" deleted`);
-  }
-
-  private loadAndDisplayLayers(config: MapConfig): void {
-    if (!this.map) return;
-
-    this.layers = loadConfiguredLayers(config.layers);
-
-    for (const layer of this.layers) {
-      this.addLayerToMap(layer);
-    }
-  }
-
-  private addLayerToMap(layer: LoadedLayer): void {
-    if (!this.map) return;
-
-    const leafletLayer = L.geoJSON(layer.data, {
-      pointToLayer: (feature, latlng) => {
-        return this.createInteractiveMarker(
-          feature as MarkerFeature,
-          latlng,
-          layer,
-        );
-      },
-      style: (feature) => {
-        if (feature?.geometry.type === "Polygon") {
-          const props = feature.properties as PolygonProperties;
-          return {
-            color: props.color,
-            fillColor: props.color,
-            fillOpacity: 0.3,
-            weight: 2,
-          };
-        }
-        return {};
-      },
-      onEachFeature: (feature, leafletFeature) => {
-        if (
-          feature.geometry.type === "Polygon" ||
-          feature.geometry.type === "MultiPolygon"
-        ) {
-          const props = feature.properties as PolygonProperties;
-          leafletFeature.bindTooltip(props.name, {
-            permanent: true,
-            direction: "center",
-            className: "fantasy-map-name-tooltip",
-          });
-          this.attachPolygonInteraction(
-            feature as PolygonFeature,
-            leafletFeature as L.Polygon,
-            layer,
-          );
-        }
-      },
-    });
-    leafletLayer.addTo(this.map);
-    this.layerControl?.addOverlay(leafletLayer, layer.config.name);
-    layer.leafletLayer = leafletLayer;
-  }
-
-  // --- Feature Interaction ---
-
-  private buildSidebarState(
-    featureType: "marker" | "polygon",
-    props: MarkerProperties | PolygonProperties,
-    feature: MapFeature,
-    layer: LoadedLayer,
-  ): SidebarState {
-    return {
-      featureType,
-      properties: props,
-      relations: this.resolveRelations(props),
-      incomingRelations: findIncomingRelations(props.id, this.layers),
-      onOpenNote: (path: string) => {
-        void this.app.workspace.openLinkText(path, "", false);
-      },
-      onReadNote: async (path: string) => {
-        const file = this.app.vault.getFileByPath(`${path}.md`);
-        if (!file) return null;
-        return this.app.vault.cachedRead(file);
-      },
-      onRenderMarkdown: (markdown: string, el: HTMLElement) => {
-        el.empty();
-        void MarkdownRenderer.render(this.app, markdown, el, "", this);
-      },
-      onSearchTag: (tag: string) => {
-        const search = (
-          this.app as ObsidianApp
-        ).internalPlugins?.getPluginById?.("global-search")?.instance;
-        search?.openGlobalSearch(`tag:${tag}`);
-      },
-      onEdit: () => {
-        this.editFeature(featureType, props, layer);
-      },
-      onDelete: () => {
-        this.deleteFeature(props, layer);
-      },
-      onAddRelation: () => {
-        this.addRelationToFeature(props, layer);
-      },
-      onRemoveRelation: (targetFeatureId: string) => {
-        this.removeRelationFromFeature(props, layer, targetFeatureId);
-      },
-      onOpenLocalMap: props.localMapId
-        ? () => void this.plugin.openMap(props.localMapId!)
-        : undefined,
-      onLinkLocalMap: !props.localMapId
-        ? () => {
-            this.openLinkLocalMapModal(feature, layer);
-          }
-        : undefined,
-    };
-  }
-
-  private createInteractiveMarker(
-    feature: MarkerFeature,
-    latlng: L.LatLng,
-    layer: LoadedLayer,
-  ): L.Marker {
-    const marker = createMarkerFromFeature(feature.properties, latlng);
-
-    marker.bindTooltip(feature.properties.name, {
-      permanent: true,
-      direction: "top",
-      offset: [0, -8],
-      className: "fantasy-map-name-tooltip",
-    });
-
-    marker.on("click", () => {
-      this.selectFeature(
-        this.buildSidebarState("marker", feature.properties, feature, layer),
-        marker,
-      );
-    });
-
-    marker.on("drag", () => {
-      this.selection?.updateDragPosition(marker);
-    });
-
-    marker.on("dragend", () => {
-      const newLatLng = marker.getLatLng();
-      feature.geometry.coordinates = [newLatLng.lng, newLatLng.lat];
-      void this.saveLayer(layer);
-    });
-
-    return marker;
-  }
-
-  private attachPolygonInteraction(
-    feature: PolygonFeature,
-    leafletPolygon: L.Polygon,
-    layer: LoadedLayer,
+  private showAddMarkerMenu(
+    e: L.LeafletMouseEvent,
+    featureCtrl: FeatureController,
   ): void {
-    leafletPolygon.on("click", (e: L.LeafletMouseEvent) => {
-      L.DomEvent.stopPropagation(e);
-      this.selectFeature(
-        this.buildSidebarState("polygon", feature.properties, feature, layer),
-        leafletPolygon,
-      );
-    });
-  }
-
-  // --- Layer Options Helpers ---
-
-  private getLayerOptions(): { id: string; name: string }[] {
-    return this.layers.map((l) => ({ id: l.config.id, name: l.config.name }));
-  }
-
-  // --- Add Marker ---
-
-  private showAddMarkerMenu(e: L.LeafletMouseEvent): void {
     const menu = new Menu();
     menu.addItem((item) => {
       item.setTitle("Add marker here");
       item.setIcon("map-pin");
       item.onClick(() => {
-        this.openAddMarkerModal(e.latlng);
+        featureCtrl.openAddMarker(e.latlng);
       });
     });
     menu.showAtPosition({
@@ -659,348 +396,12 @@ export class FantasyMapView extends ItemView {
     });
   }
 
-  private openAddMarkerModal(latlng: L.LatLng): void {
-    const layerOptions = this.getLayerOptions();
-
-    if (layerOptions.length === 0) {
-      const config = this.getMapConfig();
-      if (!config) return;
-      this.promptAddLayer(config, () => this.openAddMarkerModal(latlng));
-      return;
-    }
-
-    new FeatureModal(
-      this.app,
-      "marker",
-      null,
-      layerOptions,
-      (properties, selectedLayerId) => {
-        const feature: MarkerFeature = {
-          type: "Feature",
-          geometry: {
-            type: "Point",
-            coordinates: [latlng.lng, latlng.lat],
-          },
-          properties: properties,
-        };
-
-        const layer = this.layers.find((l) => l.config.id === selectedLayerId);
-        if (!layer) {
-          new Notice("Layer not found");
-          return;
-        }
-
-        layer.data.features.push(feature);
-        void this.saveLayer(layer);
-
-        if (layer.leafletLayer && this.map) {
-          const marker = this.createInteractiveMarker(feature, latlng, layer);
-          layer.leafletLayer.addLayer(marker);
-        }
-      },
-      this.mapId
-        ? (featureId, cb) => {
-            this.openLinkLocalMapForNew(featureId, cb);
-          }
-        : undefined,
-      this.getAllFeatures(),
-    ).open();
-  }
-
-  // --- Add Polygon ---
-
-  private openAddPolygonModal(polygon: L.Polygon): void {
-    const layerOptions = this.getLayerOptions();
-
-    if (layerOptions.length === 0) {
-      const config = this.getMapConfig();
-      if (!config) return;
-      this.promptAddLayer(config, () => this.openAddPolygonModal(polygon));
-      return;
-    }
-
-    new FeatureModal(
-      this.app,
-      "polygon",
-      null,
-      layerOptions,
-      (properties, selectedLayerId) => {
-        const latLngs = polygon.getLatLngs() as L.LatLng[][];
-        const coordinates: [number, number][][] = latLngs.map((ring) =>
-          ring.map((ll) => [ll.lng, ll.lat] as [number, number]),
-        );
-        // Close the ring if not already closed
-        for (const ring of coordinates) {
-          const first = ring[0];
-          const last = ring[ring.length - 1];
-          if (first && last && (first[0] !== last[0] || first[1] !== last[1])) {
-            ring.push(first);
-          }
-        }
-
-        const feature: PolygonFeature = {
-          type: "Feature",
-          geometry: {
-            type: "Polygon",
-            coordinates,
-          },
-          properties: properties,
-        };
-
-        const layer = this.layers.find((l) => l.config.id === selectedLayerId);
-        if (!layer) {
-          new Notice("Layer not found");
-          return;
-        }
-
-        layer.data.features.push(feature);
-        void this.saveLayer(layer);
-        this.refreshMapLayers();
-      },
-      this.mapId
-        ? (featureId, cb) => {
-            this.openLinkLocalMapForNew(featureId, cb);
-          }
-        : undefined,
-      this.getAllFeatures(),
-    ).open();
-  }
-
-  // --- Edit / Delete ---
-
-  private editFeature(
-    featureType: "marker" | "polygon",
-    properties: MarkerProperties | PolygonProperties,
-    layer: LoadedLayer,
-  ): void {
-    const layerOptions = this.getLayerOptions();
-    new FeatureModal(
-      this.app,
-      featureType,
-      properties,
-      layerOptions,
-      (updatedProperties, selectedLayerId) => {
-        const featureIndex = layer.data.features.findIndex(
-          (f) => (f.properties as { id: string }).id === properties.id,
-        );
-        if (featureIndex < 0) return;
-
-        if (selectedLayerId && selectedLayerId !== layer.config.id) {
-          // Move feature to a different layer
-          const targetLayer = this.layers.find(
-            (l) => l.config.id === selectedLayerId,
-          );
-          if (targetLayer) {
-            const [feature] = layer.data.features.splice(featureIndex, 1);
-            if (!feature) return;
-            feature.properties = updatedProperties;
-            targetLayer.data.features.push(feature);
-            void this.saveLayer(layer);
-            void this.saveLayer(targetLayer);
-            this.refreshMapLayers();
-          }
-        } else {
-          const f = layer.data.features[featureIndex];
-          if (f) f.properties = updatedProperties;
-          void this.saveLayer(layer);
-          this.refreshMapLayers();
-        }
-      },
-      (featureId, cb) => {
-        this.openLinkLocalMapForNew(featureId, cb);
-      },
-      this.getAllFeatures(properties.id),
-      layer.config.id,
-    ).open();
-  }
-
-  private addRelationToFeature(
-    properties: MarkerProperties | PolygonProperties,
-    layer: LoadedLayer,
-  ): void {
-    const allFeatures = this.getAllFeatures(properties.id);
-    new FeatureSuggestModal(this.app, allFeatures, (feature) => {
-      new RelationLabelModal(this.app, (label) => {
-        const featureIndex = layer.data.features.findIndex(
-          (f) => (f.properties as { id: string }).id === properties.id,
-        );
-        if (featureIndex < 0) return;
-        const fAdd = layer.data.features[featureIndex];
-        if (!fAdd) return;
-        const props = fAdd.properties as MarkerProperties | PolygonProperties;
-        const relations = props.relations ?? [];
-        if (relations.some((r) => r.featureId === feature.id)) return;
-        props.relations = [...relations, { featureId: feature.id, label }];
-        void this.saveLayer(layer);
-        this.refreshMapLayers();
-      }).open();
-    }).open();
-  }
-
-  private removeRelationFromFeature(
-    properties: MarkerProperties | PolygonProperties,
-    layer: LoadedLayer,
-    targetFeatureId: string,
-  ): void {
-    const targetName =
-      this.getAllFeatures().find((f) => f.id === targetFeatureId)?.name ??
-      targetFeatureId;
-    const modal = new DeleteConfirmModal(
-      this.app,
-      "Delete Relation",
-      `Are you sure you want to delete the relation to "${targetName}"`,
-      () => {
-        const featureIndex = layer.data.features.findIndex(
-          (f) => (f.properties as { id: string }).id === properties.id,
-        );
-        if (featureIndex < 0) return;
-        const fRem = layer.data.features[featureIndex];
-        if (!fRem) return;
-        const props = fRem.properties as MarkerProperties | PolygonProperties;
-        props.relations = (props.relations ?? []).filter(
-          (r) => r.featureId !== targetFeatureId,
-        );
-        void this.saveLayer(layer);
-        this.refreshMapLayers();
-      },
-    );
-    modal.open();
-  }
-
-  private deleteFeature(
-    properties: MarkerProperties | PolygonProperties,
-    layer: LoadedLayer,
-  ): void {
-    const modal = new DeleteConfirmModal(
-      this.app,
-      "Delete Marker",
-      `Are you sure you want to delete marker "${properties.name}"`,
-      () => {
-        layer.data.features = layer.data.features.filter(
-          (f) => (f.properties as { id: string }).id !== properties.id,
-        );
-        void this.saveLayer(layer);
-        this.refreshMapLayers();
-      },
-    );
-    modal.open();
-  }
-
-  // --- Link Local Map ---
-
-  private openLinkLocalMapForNew(
-    featureId: string,
-    cb: (mapId: string) => void,
-  ): void {
-    if (!this.mapId) return;
-    const modal = new LinkLocalMapModal(
-      this.app,
-      this.mapId,
-      featureId,
-      this.plugin.settings.maps,
-      (mapId, isNew, name, imagePath) => {
-        if (isNew && name && imagePath) {
-          this.plugin.settings.maps.push({
-            id: mapId,
-            name,
-            mapImagePath: imagePath,
-            layers: [],
-            parentMapId: this.mapId ?? undefined,
-            parentFeatureId: featureId,
-          });
-        } else if (!isNew) {
-          const target = this.plugin.settings.maps.find((m) => m.id === mapId);
-          if (target) {
-            target.parentMapId = this.mapId ?? undefined;
-            target.parentFeatureId = featureId;
-          }
-        }
-        void this.plugin.saveSettings();
-        cb(mapId);
-      },
-    );
-    modal.open();
-  }
-
-  private openLinkLocalMapModal(feature: MapFeature, layer: LoadedLayer): void {
-    if (!this.mapId) return;
-
-    const modal = new LinkLocalMapModal(
-      this.app,
-      this.mapId,
-      (feature.properties as { id: string }).id,
-      this.plugin.settings.maps,
-      (mapId, isNew, name, imagePath) => {
-        if (isNew && name && imagePath) {
-          const newMap = {
-            id: mapId,
-            name,
-            mapImagePath: imagePath,
-            layers: [],
-            parentMapId: this.mapId ?? undefined,
-            parentFeatureId: (feature.properties as { id: string }).id,
-          };
-          this.plugin.settings.maps.push(newMap);
-        } else if (!isNew) {
-          const target = this.plugin.settings.maps.find((m) => m.id === mapId);
-          if (target) {
-            target.parentMapId = this.mapId ?? undefined;
-            target.parentFeatureId = (feature.properties as { id: string }).id;
-          }
-        }
-
-        const featureIndex = layer.data.features.findIndex(
-          (f) =>
-            (f.properties as { id: string }).id ===
-            (feature.properties as { id: string }).id,
-        );
-        if (featureIndex >= 0) {
-          const fLink = layer.data.features[featureIndex];
-          if (fLink) {
-            (fLink.properties as { localMapId?: string }).localMapId = mapId;
-          }
-        }
-
-        void this.plugin.saveSettings();
-        void this.saveLayer(layer);
-        this.refreshMapLayers();
-      },
-    );
-    modal.open();
-  }
-
-  // --- Utilities ---
-
-  private getAllFeatures(excludeId?: string): { id: string; name: string }[] {
-    const features: { id: string; name: string }[] = [];
-    for (const layer of this.layers) {
-      for (const feature of layer.data.features) {
-        const props = feature.properties as { id: string; name: string };
-        if (props.id !== excludeId) {
-          features.push({ id: props.id, name: props.name });
-        }
-      }
-    }
-    return features;
-  }
-
-  private resolveRelations(
-    props: MarkerProperties | PolygonProperties,
-  ): { featureId: string; featureName: string; label: string }[] {
-    return (props.relations ?? []).map((r) => ({
-      featureId: r.featureId,
-      featureName:
-        this.getAllFeatures().find((f) => f.id === r.featureId)?.name ??
-        r.featureId,
-      label: r.label,
-    }));
-  }
-
   private selectFeature(
     state: SidebarState | null,
     leafletLayer?: L.Layer,
   ): void {
-    this.selection?.clear();
+    if (!this.selection) return;
+    this.selection.clear();
 
     this.updateSidebar?.(state);
     if (this.sidebarEl) {
@@ -1008,7 +409,7 @@ export class FantasyMapView extends ItemView {
     }
 
     if (state && leafletLayer) {
-      this.selection?.select(leafletLayer, state, this.layers);
+      this.selection.select(leafletLayer, state, this.layers);
     }
   }
 
