@@ -53,7 +53,10 @@
 
 .fantasy-map-wrapper button,
 .fantasy-map-create-form-wrapper button,
-.fantasy-map-modal button {
+.fantasy-map-modal button,
+.fantasy-map-modal select,
+.fantasy-map-modal input[type="color"],
+.fantasy-map-modal .modal-close-button {
   cursor: pointer;
 }
 
