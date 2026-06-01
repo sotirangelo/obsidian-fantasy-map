@@ -56,8 +56,11 @@ export class FeatureModal extends Modal {
     initialLayerId?: string,
   ) {
     super(app);
+
     this.featureType = featureType;
     this.isEdit = existingProperties !== null;
+    this.containerEl.addClass("fantasy-map-modal");
+    this.setTitle(this.isEdit ? `Edit ${featureType}` : `Add ${featureType}`);
     this.properties = existingProperties
       ? { ...existingProperties }
       : defaultProperties(featureType);
@@ -69,7 +72,6 @@ export class FeatureModal extends Modal {
   }
 
   onOpen(): void {
-    this.containerEl.addClass("fantasy-map-modal");
     this.mountedForm = mount(FeatureForm, {
       target: this.contentEl,
       props: {

@@ -5,7 +5,12 @@
   interface Props {
     existingMaps: MapConfig[];
     onBrowseImage: (cb: (path: string) => void) => void;
-    onSubmit: (mapId: string, isNew: boolean, name?: string, imagePath?: string) => void;
+    onSubmit: (
+      mapId: string,
+      isNew: boolean,
+      name?: string,
+      imagePath?: string,
+    ) => void;
   }
 
   let { existingMaps, onBrowseImage, onSubmit }: Props = $props();
@@ -35,7 +40,12 @@
       return;
     }
     error = "";
-    onSubmit(window.crypto.randomUUID(), true, newName.trim(), newImagePath.trim());
+    onSubmit(
+      window.crypto.randomUUID(),
+      true,
+      newName.trim(),
+      newImagePath.trim(),
+    );
   }
 
   function handleSubmitExisting() {
@@ -51,78 +61,105 @@
     onBrowseImage((path) => {
       newImagePath = path;
       if (!newName) {
-        newName = path.split("/").pop()?.replace(/\.\w+$/, "") ?? "";
+        newName =
+          path
+            .split("/")
+            .pop()
+            ?.replace(/\.\w+$/, "") ?? "";
       }
     });
   }
 </script>
 
-<h2>Link Local Map</h2>
-
 <div class="fantasy-map-tabs">
   <button
     class="fantasy-map-tab {tab === 'new' ? 'is-active' : ''}"
-    onclick={() => { tab = 'new'; error = ''; }}
-  >New Map</button>
+    onclick={() => {
+      tab = "new";
+      error = "";
+    }}>New Map</button
+  >
   <button
     class="fantasy-map-tab {tab === 'existing' ? 'is-active' : ''}"
-    onclick={() => { tab = 'existing'; error = ''; }}
-    disabled={existingMaps.length === 0}
-  >Existing Map</button>
+    onclick={() => {
+      tab = "existing";
+      error = "";
+    }}
+    disabled={existingMaps.length === 0}>Existing Map</button
+  >
 </div>
 
-{#if tab === 'new'}
-  <form onsubmit={(e) => { e.preventDefault(); handleSubmitNew(); }}>
-  <div class="setting-item">
-    <div class="setting-item-info">
-      <div class="setting-item-name">Name</div>
-      <div class="setting-item-description">Display name for the local map</div>
+{#if tab === "new"}
+  <form
+    onsubmit={(e) => {
+      e.preventDefault();
+      handleSubmitNew();
+    }}
+  >
+    <div class="setting-item">
+      <div class="setting-item-info">
+        <div class="setting-item-name">Name</div>
+        <div class="setting-item-description">
+          Display name for the local map
+        </div>
+      </div>
+      <div class="setting-item-control">
+        <input
+          type="text"
+          placeholder="City of Waterdeep"
+          value={newName}
+          oninput={(e) => {
+            newName = e.currentTarget.value;
+            clearError();
+          }}
+        />
+      </div>
     </div>
-    <div class="setting-item-control">
-      <input
-        type="text"
-        placeholder="City of Waterdeep"
-        value={newName}
-        oninput={(e) => { newName = e.currentTarget.value; clearError(); }}
-      />
-    </div>
-  </div>
 
-  <div class="setting-item">
-    <div class="setting-item-info">
-      <div class="setting-item-name">Map image</div>
-      <div class="setting-item-description">Image file from your vault</div>
+    <div class="setting-item">
+      <div class="setting-item-info">
+        <div class="setting-item-name">Map image</div>
+        <div class="setting-item-description">Image file from your vault</div>
+      </div>
+      <div class="setting-item-control">
+        <input
+          type="text"
+          placeholder="maps/waterdeep.png"
+          value={newImagePath}
+          oninput={(e) => {
+            newImagePath = e.currentTarget.value;
+            clearError();
+          }}
+        />
+        <button type="button" onclick={browseImage}>Browse</button>
+      </div>
     </div>
-    <div class="setting-item-control">
-      <input
-        type="text"
-        placeholder="maps/waterdeep.png"
-        value={newImagePath}
-        oninput={(e) => { newImagePath = e.currentTarget.value; clearError(); }}
-      />
-      <button type="button" onclick={browseImage}>Browse</button>
-    </div>
-  </div>
 
-  {#if error}
-    <p class="fantasy-map-form-error">{error}</p>
-  {/if}
+    {#if error}
+      <p class="fantasy-map-form-error">{error}</p>
+    {/if}
 
-  <div class="setting-item">
-    <div class="setting-item-control">
-      <button type="submit" class="mod-cta">Create & Link</button>
+    <div class="setting-item">
+      <div class="setting-item-control">
+        <button type="submit" class="mod-cta">Create & Link</button>
+      </div>
     </div>
-  </div>
   </form>
+{:else if existingMaps.length === 0}
+  <p class="setting-item-description">No linkable maps available.</p>
 {:else}
-  {#if existingMaps.length === 0}
-    <p class="setting-item-description">No linkable maps available.</p>
-  {:else}
-    <form onsubmit={(e) => { e.preventDefault(); handleSubmitExisting(); }}>
+  <form
+    onsubmit={(e) => {
+      e.preventDefault();
+      handleSubmitExisting();
+    }}
+  >
     <div class="setting-item">
       <div class="setting-item-info">
         <div class="setting-item-name">Map</div>
-        <div class="setting-item-description">Select an existing map to link</div>
+        <div class="setting-item-description">
+          Select an existing map to link
+        </div>
       </div>
       <div class="setting-item-control">
         <select
@@ -145,8 +182,7 @@
         <button type="submit" class="mod-cta">Link Map</button>
       </div>
     </div>
-    </form>
-  {/if}
+  </form>
 {/if}
 
 <style>

@@ -176,8 +176,6 @@
     handleSubmit();
   }}
 >
-  <h2>{isEdit ? `Edit ${label}` : `Add ${label}`}</h2>
-
   <div class="setting-item">
     <div class="setting-item-info">
       <div class="setting-item-name">Name</div>

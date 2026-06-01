@@ -8,7 +8,12 @@ export class LinkLocalMapModal extends Modal {
   private currentMapId: string;
   private featureId: string;
   private existingMaps: MapConfig[];
-  private onSubmit: (mapId: string, isNew: boolean, name?: string, imagePath?: string) => void;
+  private onSubmit: (
+    mapId: string,
+    isNew: boolean,
+    name?: string,
+    imagePath?: string,
+  ) => void;
   private mountedForm: ReturnType<typeof mount> | null = null;
 
   constructor(
@@ -16,9 +21,16 @@ export class LinkLocalMapModal extends Modal {
     currentMapId: string,
     featureId: string,
     existingMaps: MapConfig[],
-    onSubmit: (mapId: string, isNew: boolean, name?: string, imagePath?: string) => void,
+    onSubmit: (
+      mapId: string,
+      isNew: boolean,
+      name?: string,
+      imagePath?: string,
+    ) => void,
   ) {
     super(app);
+    this.setTitle("Link local map");
+    this.containerEl.addClass("fantasy-map-modal");
     this.currentMapId = currentMapId;
     this.featureId = featureId;
     this.existingMaps = existingMaps;
@@ -26,7 +38,6 @@ export class LinkLocalMapModal extends Modal {
   }
 
   onOpen(): void {
-    this.containerEl.addClass("fantasy-map-modal");
     // Filter out current map and maps that already have a parent
     const linkableMaps = this.existingMaps.filter(
       (m) => m.id !== this.currentMapId && !m.parentMapId,
@@ -41,7 +52,12 @@ export class LinkLocalMapModal extends Modal {
             cb(file.path);
           }).open();
         },
-        onSubmit: (mapId: string, isNew: boolean, name?: string, imagePath?: string) => {
+        onSubmit: (
+          mapId: string,
+          isNew: boolean,
+          name?: string,
+          imagePath?: string,
+        ) => {
           this.close();
           this.onSubmit(mapId, isNew, name, imagePath);
         },

@@ -24,13 +24,14 @@ export class ManageLayersModal extends Modal {
   ) {
     super(app);
     this.layers = layers;
+    this.setTitle("Manage layers");
+    this.containerEl.addClass("fantasy-map-modal");
     this.onAdd = onAdd;
     this.onRename = onRename;
     this.onDelete = onDelete;
   }
 
   onOpen(): void {
-    this.containerEl.addClass("fantasy-map-modal");
     this.mountedForm = mount(ManageLayersForm, {
       target: this.contentEl,
       props: {

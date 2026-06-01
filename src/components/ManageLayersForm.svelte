@@ -74,8 +74,6 @@
   }
 </script>
 
-<h2>Manage Layers</h2>
-
 <div class="manage-layers-list">
   {#if layers.length === 0}
     <p class="manage-layers-empty">No layers yet.</p>
@@ -135,11 +133,7 @@
       if (e.key === "Enter") handleAdd();
     }}
   />
-  <button
-    class="mod-cta"
-    onclick={handleAdd}
-    disabled={!newLayerName.trim()}
-  >
+  <button class="mod-cta" onclick={handleAdd} disabled={!newLayerName.trim()}>
     Add Layer
   </button>
 </div>
