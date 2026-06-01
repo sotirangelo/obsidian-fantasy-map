@@ -299,7 +299,7 @@
         oninput={(e) => (tagInput = e.currentTarget.value)}
         onkeydown={handleTagKeydown}
       />
-      <button type="button" onclick={addTag}>Add</button>
+      <button type="button" onclick={addTag} disabled={!tagInput.trim()}>Add</button>
       <button type="button" onclick={browseTag}>Browse tags</button>
     </div>
   </div>

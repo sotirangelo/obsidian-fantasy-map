@@ -51,12 +51,10 @@
 
 /* ── Buttons ──────────────────────────────────────────────────── */
 
-.fantasy-map-wrapper button,
-.fantasy-map-create-form-wrapper button,
-.fantasy-map-modal button,
-.fantasy-map-modal select,
-.fantasy-map-modal input[type="color"],
-.fantasy-map-modal .modal-close-button {
+:is(.fantasy-map-wrapper, .fantasy-map-create-form-wrapper, .fantasy-map-modal)
+  button:enabled,
+.fantasy-map-modal
+  :is(select:enabled, input[type="color"]:enabled, .modal-close-button) {
   cursor: pointer;
 }
 
