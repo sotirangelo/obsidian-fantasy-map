@@ -20,6 +20,7 @@ export class SetScaleModal extends Modal {
   constructor(
     app: App,
     onSubmit: (realDistance: number, unit: string) => void,
+    onCancel?: () => void,
   ) {
     super(app);
     this.containerEl.addClass("fantasy-map-modal");
@@ -33,6 +34,7 @@ export class SetScaleModal extends Modal {
     let distance = "";
     let unit = "km";
     let errorEl: HTMLElement | null = null;
+    let submitted = false;
 
     new Setting(this.contentEl)
       .setName("Distance")
@@ -68,6 +70,7 @@ export class SetScaleModal extends Modal {
         });
         return;
       }
+      submitted = true;
       this.close();
       onSubmit(result.output.distance, result.output.unit);
     };
@@ -75,5 +78,9 @@ export class SetScaleModal extends Modal {
     new Setting(this.contentEl).addButton((btn) =>
       btn.setButtonText("Save scale").setCta().onClick(submit),
     );
+
+    this.onClose = () => {
+      if (!submitted) onCancel?.();
+    };
   }
 }

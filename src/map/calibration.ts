@@ -66,16 +66,20 @@ export class CalibrationHandler {
 
       const pxDist = pixelDistance([p1.lat, p1.lng], [latlng.lat, latlng.lng]);
 
-      new SetScaleModal(this.getApp(), (realDistance, unit) => {
-        this.clearTempLayers();
-        this.onComplete(
-          [p1.lat, p1.lng],
-          [latlng.lat, latlng.lng],
-          pxDist,
-          realDistance,
-          unit,
-        );
-      }).open();
+      new SetScaleModal(
+        this.getApp(),
+        (realDistance, unit) => {
+          this.clearTempLayers();
+          this.onComplete(
+            [p1.lat, p1.lng],
+            [latlng.lat, latlng.lng],
+            pxDist,
+            realDistance,
+            unit,
+          );
+        },
+        () => this.clearTempLayers(),
+      ).open();
     }
   }
 
