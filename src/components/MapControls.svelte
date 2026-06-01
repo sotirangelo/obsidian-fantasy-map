@@ -10,6 +10,7 @@
     onMeasure: (onDone: () => void) => void;
     onCancelMeasure: () => void;
     onManageLayers: () => void;
+    onModeChange?: (mode: string | null) => void;
     parentName?: string;
     onNavigateBack?: () => void;
   }
@@ -21,6 +22,7 @@
     onMeasure,
     onCancelMeasure,
     onManageLayers,
+    onModeChange,
     parentName,
     onNavigateBack,
   }: Props = $props();
@@ -127,6 +129,10 @@
       onMeasure(resetActiveMode);
     }
   }
+
+  $effect(() => {
+    onModeChange?.(activeMode);
+  });
 
   // Listen for Geoman draw end to reset active state
   $effect(() => {

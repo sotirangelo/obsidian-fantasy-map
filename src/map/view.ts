@@ -44,6 +44,7 @@ export class FantasyMapView extends ItemView {
   private controlsEl: HTMLDivElement | null = null;
   private controlsComponent: ReturnType<typeof mount> | null = null;
   private updateSidebar: ((state: SidebarState | null) => void) | null = null;
+  private shapeEditingActive = false;
   private scaleBarControl: L.Control | null = null;
   private updateScaleBar: (() => void) | null = null;
 
@@ -310,6 +311,9 @@ export class FantasyMapView extends ItemView {
         onMeasure: (onDone: () => void) => measure.start(onDone),
         onCancelMeasure: () => measure.cleanup(),
         onManageLayers: () => layerMgr.promptManage(),
+        onModeChange: (mode: string | null) => {
+          this.shapeEditingActive = mode === "edit" || mode === "drag" || mode === "removal";
+        },
         parentName:
           parentConfig?.name ?? (config.parentMapId ? "Parent Map" : undefined),
         onNavigateBack: config.parentMapId
@@ -401,6 +405,7 @@ export class FantasyMapView extends ItemView {
     leafletLayer?: L.Layer,
   ): void {
     if (!this.selection) return;
+    if (state && this.shapeEditingActive) return;
     this.selection.clear();
 
     this.updateSidebar?.(state);
