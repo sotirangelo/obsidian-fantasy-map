@@ -39,14 +39,21 @@
 
 /* Icon remove/dismiss button base */
 .fm-remove-btn {
-  background: none;
+  display: inline-flex;
+  align-items: center;
+  padding: var(--size-2-1);
+  justify-content: center;
+  background: var(--interactive-normal);
   border: none;
   color: var(--text-muted);
   cursor: pointer;
+  --icon-size: var(--icon-xs);
 }
 
 .fm-remove-btn:hover {
   color: var(--text-error);
+  background: var(--interactive-hover);
+  box-shadow: none;
 }
 
 /* ── Buttons ──────────────────────────────────────────────────── */
@@ -79,14 +86,6 @@
 .fantasy-map-btn-danger:hover {
   background: var(--background-modifier-error);
   color: var(--text-on-accent);
-}
-
-.fantasy-map-btn-remove {
-  padding: var(--size-4-1) var(--size-4-2);
-  color: var(--text-error);
-  background: none;
-  border: var(--border-width) solid var(--text-error);
-  border-radius: var(--radius-s);
 }
 
 /* ── Sidebar ──────────────────────────────────────────────────── */

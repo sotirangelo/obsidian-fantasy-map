@@ -1,6 +1,7 @@
 <script lang="ts">
   import { untrack } from "svelte";
   import type { MarkerProperties, PolygonProperties } from "../types";
+  import { icon } from "../utils";
 
   interface RelationEntry {
     featureId: string;
@@ -169,225 +170,252 @@
   }
 </script>
 
-<form onsubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
-<h2>{isEdit ? `Edit ${label}` : `Add ${label}`}</h2>
+<form
+  onsubmit={(e) => {
+    e.preventDefault();
+    handleSubmit();
+  }}
+>
+  <h2>{isEdit ? `Edit ${label}` : `Add ${label}`}</h2>
 
-<div class="setting-item">
-  <div class="setting-item-info">
-    <div class="setting-item-name">Name</div>
-    <div class="setting-item-description">
-      Display name for the {label.toLowerCase()}
-    </div>
-  </div>
-  <div class="setting-item-control">
-    <input
-      type="text"
-      placeholder={featureType === "marker" ? "Waterdeep" : "The Dark Forest"}
-      value={name}
-      oninput={(e) => { name = e.currentTarget.value; clearError(); }}
-    />
-  </div>
-</div>
-
-<div class="setting-item">
-  <div class="setting-item-info">
-    <div class="setting-item-name">Color</div>
-    <div class="setting-item-description">
-      {featureType === "marker" ? "Marker color" : "Fill color for the region"}
-    </div>
-  </div>
-  <div class="setting-item-control">
-    <input
-      type="color"
-      value={color}
-      oninput={(e) => (color = e.currentTarget.value)}
-    />
-  </div>
-</div>
-
-<div class="setting-item">
-  <div class="setting-item-info">
-    <div class="setting-item-name">Description</div>
-    <div class="setting-item-description">
-      Short description shown in the {featureType === "marker"
-        ? "popup"
-        : "sidebar"}
-    </div>
-  </div>
-  <div class="setting-item-control">
-    <textarea
-      placeholder={featureType === "marker"
-        ? "A bustling port city on the sword coast"
-        : "A dense, ancient forest..."}
-      value={description}
-      oninput={(e) => (description = e.currentTarget.value)}
-    ></textarea>
-  </div>
-</div>
-
-<div class="setting-item">
-  <div class="setting-item-info">
-    <div class="setting-item-name">Main note</div>
-    <div class="setting-item-description">
-      Primary Obsidian note linked to this {label.toLowerCase()}
-    </div>
-  </div>
-  <div class="setting-item-control">
-    <input
-      type="text"
-      placeholder={featureType === "marker"
-        ? "Cities/waterdeep"
-        : "Regions/dark-forest"}
-      value={note}
-      oninput={(e) => (note = e.currentTarget.value)}
-    />
-    <button type="button" onclick={browseMainNote}>Browse</button>
-  </div>
-</div>
-
-<div class="setting-item">
-  <div class="setting-item-info">
-    <div class="setting-item-name">Additional notes</div>
-    <div class="setting-item-description">
-      Other Obsidian notes related to this {label.toLowerCase()}
-    </div>
-  </div>
-  <div class="setting-item-control fantasy-map-notes-control">
-    {#each notes as n, i (i)}
-      <div class="fantasy-map-note-row">
-        <input
-          type="text"
-          placeholder="Path/to/note"
-          value={n}
-          oninput={(e) => (notes[i] = e.currentTarget.value)}
-        />
-        <button type="button" onclick={() => browseAdditionalNote(i)}
-          >Browse</button
-        >
-        <button type="button" class="fantasy-map-btn-remove" onclick={() => removeNote(i)}
-          >×</button
-        >
+  <div class="setting-item">
+    <div class="setting-item-info">
+      <div class="setting-item-name">Name</div>
+      <div class="setting-item-description">
+        Display name for the {label.toLowerCase()}
       </div>
-    {/each}
-    <button type="button" onclick={addNote}>+ Add note</button>
-  </div>
-</div>
-
-<div class="setting-item">
-  <div class="setting-item-info">
-    <div class="setting-item-name">Tags</div>
-    <div class="setting-item-description">Tags for categorization</div>
-  </div>
-  <div class="setting-item-control fantasy-map-tags-control">
-    {#if tags.length > 0}
-      <div class="fantasy-map-tag-list">
-        {#each tags as tag, i (i)}
-          <span class="fm-tag fantasy-map-tag">
-            {tag}
-            <button type="button" class="fantasy-map-tag-remove fm-remove-btn" onclick={() => removeTag(i)}
-              >×</button
-            >
-          </span>
-        {/each}
-      </div>
-    {/if}
-    <div class="fantasy-map-tag-input-row">
+    </div>
+    <div class="setting-item-control">
       <input
         type="text"
-        placeholder="Add a tag..."
-        value={tagInput}
-        oninput={(e) => (tagInput = e.currentTarget.value)}
-        onkeydown={handleTagKeydown}
+        placeholder={featureType === "marker" ? "Waterdeep" : "The Dark Forest"}
+        value={name}
+        oninput={(e) => {
+          name = e.currentTarget.value;
+          clearError();
+        }}
       />
-      <button type="button" onclick={addTag} disabled={!tagInput.trim()}>Add</button>
-      <button type="button" onclick={browseTag}>Browse tags</button>
     </div>
   </div>
-</div>
 
-{#if onBrowseFeature}
   <div class="setting-item">
     <div class="setting-item-info">
-      <div class="setting-item-name">Relations</div>
+      <div class="setting-item-name">Color</div>
       <div class="setting-item-description">
-        Features related to this {label.toLowerCase()}
+        {featureType === "marker"
+          ? "Marker color"
+          : "Fill color for the region"}
       </div>
     </div>
-    <div class="setting-item-control fantasy-map-relations-control">
-      {#each relations as rel, i (i)}
-        <div class="fantasy-map-relation-row">
+    <div class="setting-item-control">
+      <input
+        type="color"
+        value={color}
+        oninput={(e) => (color = e.currentTarget.value)}
+      />
+    </div>
+  </div>
+
+  <div class="setting-item">
+    <div class="setting-item-info">
+      <div class="setting-item-name">Description</div>
+      <div class="setting-item-description">
+        Short description shown in the {featureType === "marker"
+          ? "popup"
+          : "sidebar"}
+      </div>
+    </div>
+    <div class="setting-item-control">
+      <textarea
+        placeholder={featureType === "marker"
+          ? "A bustling port city on the sword coast"
+          : "A dense, ancient forest..."}
+        value={description}
+        oninput={(e) => (description = e.currentTarget.value)}
+      ></textarea>
+    </div>
+  </div>
+
+  <div class="setting-item">
+    <div class="setting-item-info">
+      <div class="setting-item-name">Main note</div>
+      <div class="setting-item-description">
+        Primary Obsidian note linked to this {label.toLowerCase()}
+      </div>
+    </div>
+    <div class="setting-item-control">
+      <input
+        type="text"
+        placeholder={featureType === "marker"
+          ? "Cities/waterdeep"
+          : "Regions/dark-forest"}
+        value={note}
+        oninput={(e) => (note = e.currentTarget.value)}
+      />
+      <button type="button" onclick={browseMainNote}>Browse</button>
+    </div>
+  </div>
+
+  <div class="setting-item">
+    <div class="setting-item-info">
+      <div class="setting-item-name">Additional notes</div>
+      <div class="setting-item-description">
+        Other Obsidian notes related to this {label.toLowerCase()}
+      </div>
+    </div>
+    <div class="setting-item-control fantasy-map-notes-control">
+      {#each notes as n, i (i)}
+        <div class="fantasy-map-note-row">
           <input
             type="text"
-            placeholder="Relationship type..."
-            value={rel.label}
-            oninput={(e) => (rel.label = e.currentTarget.value)}
+            placeholder="Path/to/note"
+            value={n}
+            oninput={(e) => (notes[i] = e.currentTarget.value)}
           />
-          <span class="fantasy-map-relation-name">{rel.featureName}</span>
+          <button type="button" onclick={() => browseAdditionalNote(i)}
+            >Browse</button
+          >
           <button
             type="button"
-            class="fantasy-map-btn-remove"
-            onclick={() => removeRelation(i)}>×</button
+            class="fm-remove-btn"
+            onclick={() => removeNote(i)}
+            aria-label="Remove note"
+            use:icon={"x"}
           >
+          </button>
         </div>
       {/each}
-      <button type="button" onclick={addRelation}
-        >+ Add relation</button
-      >
+      <button type="button" onclick={addNote}>+ Add note</button>
     </div>
   </div>
-{/if}
 
-{#if onLinkLocalMap}
   <div class="setting-item">
     <div class="setting-item-info">
-      <div class="setting-item-name">Local Map</div>
-      <div class="setting-item-description">
-        Link a drill-down map to this {label.toLowerCase()}
-      </div>
+      <div class="setting-item-name">Tags</div>
+      <div class="setting-item-description">Tags for categorization</div>
     </div>
-    <div class="setting-item-control">
-      {#if localMapId}
-        <span class="fantasy-map-linked-label">Linked</span>
-        <button type="button" onclick={handleLinkLocalMap}>Change</button>
-      {:else}
-        <button type="button" onclick={handleLinkLocalMap}>Link Local Map</button>
+    <div class="setting-item-control fantasy-map-tags-control">
+      {#if tags.length > 0}
+        <div class="fantasy-map-tag-list">
+          {#each tags as tag, i (i)}
+            <span class="fm-tag fantasy-map-tag">
+              {tag}
+              <button
+                type="button"
+                class="fantasy-map-tag-remove fm-remove-btn"
+                aria-label="Remove tag"
+                onclick={() => removeTag(i)}
+                use:icon={"x"}
+              >
+              </button>
+            </span>
+          {/each}
+        </div>
       {/if}
-    </div>
-  </div>
-{/if}
-
-{#if layerOptions.length > 0}
-  <div class="setting-item">
-    <div class="setting-item-info">
-      <div class="setting-item-name">Layer</div>
-      <div class="setting-item-description">
-        {isEdit ? `Move this ${label.toLowerCase()} to a different layer` : `Which layer to add this ${label.toLowerCase()} to`}
+      <div class="fantasy-map-tag-input-row">
+        <input
+          type="text"
+          placeholder="Add a tag..."
+          value={tagInput}
+          oninput={(e) => (tagInput = e.currentTarget.value)}
+          onkeydown={handleTagKeydown}
+        />
+        <button type="button" onclick={addTag} disabled={!tagInput.trim()}
+          >Add</button
+        >
+        <button type="button" onclick={browseTag}>Browse tags</button>
       </div>
     </div>
-    <div class="setting-item-control">
-      <select
-        value={selectedLayerId}
-        onchange={(e) => (selectedLayerId = e.currentTarget.value)}
-      >
-        {#each layerOptions as opt (opt.id)}
-          <option value={opt.id}>{opt.name}</option>
+  </div>
+
+  {#if onBrowseFeature}
+    <div class="setting-item">
+      <div class="setting-item-info">
+        <div class="setting-item-name">Relations</div>
+        <div class="setting-item-description">
+          Features related to this {label.toLowerCase()}
+        </div>
+      </div>
+      <div class="setting-item-control fantasy-map-relations-control">
+        {#each relations as rel, i (i)}
+          <div class="fantasy-map-relation-row">
+            <input
+              type="text"
+              placeholder="Relationship type..."
+              value={rel.label}
+              oninput={(e) => (rel.label = e.currentTarget.value)}
+            />
+            <span class="fantasy-map-relation-name">{rel.featureName}</span>
+            <button
+              type="button"
+              class="fm-remove-btn"
+              onclick={() => removeRelation(i)}
+              aria-label="Remove relation"
+              use:icon={"x"}
+            >
+            </button>
+          </div>
         {/each}
-      </select>
+        <button type="button" onclick={addRelation}>+ Add relation</button>
+      </div>
+    </div>
+  {/if}
+
+  {#if onLinkLocalMap}
+    <div class="setting-item">
+      <div class="setting-item-info">
+        <div class="setting-item-name">Local Map</div>
+        <div class="setting-item-description">
+          Link a drill-down map to this {label.toLowerCase()}
+        </div>
+      </div>
+      <div class="setting-item-control">
+        {#if localMapId}
+          <span class="fantasy-map-linked-label">Already Linked</span>
+          <button type="button" onclick={handleLinkLocalMap}>Change</button>
+        {:else}
+          <button type="button" onclick={handleLinkLocalMap}
+            >Link Local Map</button
+          >
+        {/if}
+      </div>
+    </div>
+  {/if}
+
+  {#if layerOptions.length > 0}
+    <div class="setting-item">
+      <div class="setting-item-info">
+        <div class="setting-item-name">Layer</div>
+        <div class="setting-item-description">
+          {isEdit
+            ? `Move this ${label.toLowerCase()} to a different layer`
+            : `Which layer to add this ${label.toLowerCase()} to`}
+        </div>
+      </div>
+      <div class="setting-item-control">
+        <select
+          value={selectedLayerId}
+          onchange={(e) => (selectedLayerId = e.currentTarget.value)}
+        >
+          {#each layerOptions as opt (opt.id)}
+            <option value={opt.id}>{opt.name}</option>
+          {/each}
+        </select>
+      </div>
+    </div>
+  {/if}
+
+  {#if error}
+    <p class="fantasy-map-form-error">{error}</p>
+  {/if}
+
+  <div class="setting-item">
+    <div class="setting-item-control">
+      <button type="submit" class="mod-cta">
+        {isEdit ? "Save" : `Add ${label}`}
+      </button>
     </div>
   </div>
-{/if}
-
-{#if error}
-  <p class="fantasy-map-form-error">{error}</p>
-{/if}
-
-<div class="setting-item">
-  <div class="setting-item-control">
-    <button type="submit" class="mod-cta">
-      {isEdit ? "Save" : `Add ${label}`}
-    </button>
-  </div>
-</div>
 </form>
 
 <style>
