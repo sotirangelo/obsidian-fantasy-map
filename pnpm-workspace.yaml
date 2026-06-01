@@ -1,8 +1,9 @@
-savePrefix: ""
+onlyBuiltDependencies:
+  - esbuild
+  - svelte-preprocess
 
 peerDependencyRules:
   allowAny:
-    - "obsidian"
+    - obsidian
 
-onlyBuiltDependencies:
-  - esbuild
+savePrefix: ''

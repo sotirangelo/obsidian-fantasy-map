@@ -1,22 +1,28 @@
 {
   "compilerOptions": {
     "strict": true,
+    "inlineSourceMap": true,
+    "inlineSources": true,
     "esModuleInterop": true,
+    "verbatimModuleSyntax": true,
     "skipLibCheck": true,
     "moduleResolution": "bundler",
-    "baseUrl": "src",
     "module": "ESNext",
-    "target": "ES6",
+    "target": "ES2021",
     "noImplicitAny": true,
     "noImplicitThis": true,
     "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": true,
     "importHelpers": true,
     "isolatedModules": true,
+    "forceConsistentCasingInFileNames": true,
     "strictNullChecks": true,
     "strictBindCallApply": true,
     "allowSyntheticDefaultImports": true,
     "useUnknownInCatchVariables": true,
-    "lib": ["DOM", "ES5", "ES6", "ES7"]
+    "lib": ["DOM", "ES2021"],
+    "noEmit": true
   },
   "include": ["src/**/*.ts", "src/**/*.svelte"]
 }
