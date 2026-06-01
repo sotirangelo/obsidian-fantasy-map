@@ -74,9 +74,7 @@
     ),
   );
 
-  let color = $state(
-    untrack(() => (featureType === "polygon" ? initialProperties.color : "")),
-  );
+  let color = $state(untrack(() => initialProperties.color));
 
   function handleSubmit() {
     if (!name.trim()) {
@@ -91,28 +89,20 @@
       .filter((r) => r.featureId)
       .map(({ featureId, label }) => ({ featureId, label }));
 
-    const base = {
-      id: initialProperties.id,
-      name: name.trim(),
-      note,
-      description,
-      localMapId: localMapId || undefined,
-      notes: filteredNotes.length > 0 ? filteredNotes : undefined,
-      tags: filteredTags.length > 0 ? filteredTags : undefined,
-      relations: filteredRelations.length > 0 ? filteredRelations : undefined,
-    };
-
-    if (featureType === "marker") {
-      onSubmit(
-        {
-          ...base,
-          color: (initialProperties).color,
-        },
-        selectedLayerId,
-      );
-    } else {
-      onSubmit({ ...base, color }, selectedLayerId);
-    }
+    onSubmit(
+      {
+        id: initialProperties.id,
+        name: name.trim(),
+        note,
+        description,
+        color,
+        localMapId: localMapId || undefined,
+        notes: filteredNotes.length > 0 ? filteredNotes : undefined,
+        tags: filteredTags.length > 0 ? filteredTags : undefined,
+        relations: filteredRelations.length > 0 ? filteredRelations : undefined,
+      },
+      selectedLayerId,
+    );
   }
 
   function browseMainNote() {
@@ -199,21 +189,21 @@
   </div>
 </div>
 
-{#if featureType === "polygon"}
-  <div class="setting-item">
-    <div class="setting-item-info">
-      <div class="setting-item-name">Color</div>
-      <div class="setting-item-description">Fill color for the region</div>
-    </div>
-    <div class="setting-item-control">
-      <input
-        type="color"
-        value={color}
-        oninput={(e) => (color = e.currentTarget.value)}
-      />
+<div class="setting-item">
+  <div class="setting-item-info">
+    <div class="setting-item-name">Color</div>
+    <div class="setting-item-description">
+      {featureType === "marker" ? "Marker color" : "Fill color for the region"}
     </div>
   </div>
-{/if}
+  <div class="setting-item-control">
+    <input
+      type="color"
+      value={color}
+      oninput={(e) => (color = e.currentTarget.value)}
+    />
+  </div>
+</div>
 
 <div class="setting-item">
   <div class="setting-item-info">

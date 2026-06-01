@@ -429,3 +429,10 @@
 .fantasy-map-relation-label::before {
   display: none;
 }
+
+.fantasy-map-relation-ring,
+.fantasy-map-relation-arrow,
+.fantasy-map-relation-arrowhead {
+  filter: drop-shadow(0 0 1.5px var(--background-primary))
+    drop-shadow(0 0 1.5px var(--background-primary));
+}
