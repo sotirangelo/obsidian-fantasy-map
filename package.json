@@ -2,9 +2,9 @@
   "name": "obsidian-fantasy-map",
   "version": "1.1.0",
   "description": "Display a fantasy campaign map with interactive Features linked to vault notes",
-  "packageManager": "pnpm@10.29.3",
+  "packageManager": "pnpm@11.5.0",
   "engines": {
-    "node": "^20.19.0"
+    "node": "^22.22.3"
   },
   "main": "./dist/main.js",
   "type": "module",
@@ -37,5 +37,8 @@
     "@geoman-io/leaflet-geoman-free": "2.19.2",
     "leaflet": "1.9.4",
     "valibot": "1.2.0"
+  },
+  "volta": {
+    "node": "22.22.3"
   }
 }

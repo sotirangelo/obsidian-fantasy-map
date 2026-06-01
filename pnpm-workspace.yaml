@@ -1,9 +1,12 @@
-onlyBuiltDependencies:
-  - esbuild
-  - svelte-preprocess
+allowBuilds:
+  esbuild: true
+  svelte-preprocess: true
+
+minimumReleaseAgeExclude:
+  - svelte-check@4.5.0
 
 peerDependencyRules:
   allowAny:
     - obsidian
 
-savePrefix: ''
+savePrefix: ""
