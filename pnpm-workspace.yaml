@@ -1,4 +1,8 @@
 savePrefix: ""
 
+peerDependencyRules:
+  allowAny:
+    - "obsidian"
+
 onlyBuiltDependencies:
   - esbuild
