@@ -1,13 +1,6 @@
-import { App, Modal } from "obsidian";
-import { mount, unmount } from "svelte";
-import ConfirmDelete from "../components/ConfirmDelete.svelte";
+import { App, Modal, Setting } from "obsidian";
 
 export class DeleteConfirmModal extends Modal {
-  private title: string;
-  private description: string;
-  private onConfirm: () => void;
-  private mountedPanel: ReturnType<typeof mount> | null = null;
-
   constructor(
     app: App,
     title: string,
@@ -15,34 +8,23 @@ export class DeleteConfirmModal extends Modal {
     onConfirm: () => void,
   ) {
     super(app);
-    this.title = title;
-    this.description = description;
-    this.onConfirm = onConfirm;
-  }
-
-  onOpen(): void {
     this.containerEl.addClass("fantasy-map-modal");
-    this.mountedPanel = mount(ConfirmDelete, {
-      target: this.contentEl,
-      props: {
-        title: this.title,
-        description: this.description,
-        onConfirm: () => {
-          this.close();
-          this.onConfirm();
-        },
-        onCancel: () => {
-          this.close();
-        },
-      },
-    });
-  }
+    this.setTitle(title);
+    this.contentEl.createEl("p", { text: description });
 
-  onClose(): void {
-    if (this.mountedPanel) {
-      void unmount(this.mountedPanel);
-      this.mountedPanel = null;
-    }
-    this.contentEl.empty();
+    new Setting(this.contentEl)
+      .addButton((btn) =>
+        btn.setButtonText("Cancel").onClick(() => this.close()),
+      )
+      .addButton((btn) =>
+        btn
+          .setButtonText("Delete")
+          .setWarning()
+          .setCta()
+          .onClick(() => {
+            this.close();
+            onConfirm();
+          }),
+      );
   }
 }
