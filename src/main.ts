@@ -1,4 +1,4 @@
-import { Plugin } from "obsidian";
+import { Plugin, TAbstractFile } from "obsidian";
 import * as v from "valibot";
 import { FantasyMapView, FANTASY_MAP_VIEW } from "./map/view";
 import {
@@ -55,6 +55,62 @@ export default class FantasyMapPlugin extends Plugin {
         this.openDeleteMapPicker();
       },
     });
+
+    this.registerEvent(
+      this.app.vault.on("rename", (file, oldPath) => {
+        this.handleVaultRename(file, oldPath);
+      }),
+    );
+  }
+
+  private handleVaultRename(file: TAbstractFile, oldPath: string): void {
+    const newPath = file.path;
+    if (!oldPath || newPath === oldPath) return;
+
+    const stripMd = (p: string): string =>
+      p.endsWith(".md") ? p.slice(0, -3) : p;
+    const oldNote = stripMd(oldPath);
+    const newNote = stripMd(newPath);
+
+    const rename = (path: string, oldP: string, newP: string): string => {
+      if (path === oldP) return newP;
+      if (path.startsWith(oldP + "/")) return newP + path.slice(oldP.length);
+      return path;
+    };
+
+    let changed = false;
+    for (const map of this.settings.maps) {
+      const newImg = rename(map.mapImagePath, oldPath, newPath);
+      if (newImg !== map.mapImagePath) {
+        map.mapImagePath = newImg;
+        changed = true;
+      }
+      for (const layer of map.layers) {
+        for (const feature of layer.features) {
+          const props = feature.properties;
+          if (props.note) {
+            const nn = rename(props.note, oldNote, newNote);
+            if (nn !== props.note) {
+              props.note = nn;
+              changed = true;
+            }
+          }
+          if (props.notes) {
+            for (let i = 0; i < props.notes.length; i++) {
+              const cur = props.notes[i];
+              if (!cur) continue;
+              const nn = rename(cur, oldNote, newNote);
+              if (nn !== cur) {
+                props.notes[i] = nn;
+                changed = true;
+              }
+            }
+          }
+        }
+      }
+    }
+
+    if (changed) void this.saveSettings();
   }
 
   private openCreateMapModal(): void {
