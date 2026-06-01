@@ -94,7 +94,7 @@
   position: absolute;
   top: 0;
   left: 0;
-  width: 280px;
+  max-width: 40%;
   height: 100%;
   z-index: 1000;
   overflow: hidden;
