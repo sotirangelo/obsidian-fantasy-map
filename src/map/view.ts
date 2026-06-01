@@ -9,7 +9,6 @@ import {
 import * as L from "leaflet";
 import "@geoman-io/leaflet-geoman-free";
 import { mount, unmount } from "svelte";
-import type { Polygon } from "geojson";
 import type FantasyMapPlugin from "../main";
 import type {
   LoadedLayer,
@@ -698,7 +697,7 @@ export class FantasyMapView extends ItemView {
             type: "Point",
             coordinates: [latlng.lng, latlng.lat],
           },
-          properties: properties as MarkerProperties,
+          properties: properties,
         };
 
         const layer = this.layers.find((l) => l.config.id === selectedLayerId);
@@ -748,12 +747,10 @@ export class FantasyMapView extends ItemView {
         );
         // Close the ring if not already closed
         for (const ring of coordinates) {
-          if (
-            ring.length > 0 &&
-            (ring[0][0] !== ring[ring.length - 1][0] ||
-              ring[0][1] !== ring[ring.length - 1][1])
-          ) {
-            ring.push(ring[0]);
+          const first = ring[0];
+          const last = ring[ring.length - 1];
+          if (first && last && (first[0] !== last[0] || first[1] !== last[1])) {
+            ring.push(first);
           }
         }
 
@@ -762,8 +759,8 @@ export class FantasyMapView extends ItemView {
           geometry: {
             type: "Polygon",
             coordinates,
-          } as Polygon,
-          properties: properties as PolygonProperties,
+          },
+          properties: properties,
         };
 
         const layer = this.layers.find((l) => l.config.id === selectedLayerId);
@@ -811,6 +808,7 @@ export class FantasyMapView extends ItemView {
           );
           if (targetLayer) {
             const [feature] = layer.data.features.splice(featureIndex, 1);
+            if (!feature) return;
             feature.properties = updatedProperties;
             targetLayer.data.features.push(feature);
             void this.saveLayer(layer);
@@ -818,7 +816,8 @@ export class FantasyMapView extends ItemView {
             this.refreshMapLayers();
           }
         } else {
-          layer.data.features[featureIndex].properties = updatedProperties;
+          const f = layer.data.features[featureIndex];
+          if (f) f.properties = updatedProperties;
           void this.saveLayer(layer);
           this.refreshMapLayers();
         }
@@ -842,9 +841,9 @@ export class FantasyMapView extends ItemView {
           (f) => (f.properties as { id: string }).id === properties.id,
         );
         if (featureIndex < 0) return;
-        const props = layer.data.features[featureIndex].properties as
-          | MarkerProperties
-          | PolygonProperties;
+        const fAdd = layer.data.features[featureIndex];
+        if (!fAdd) return;
+        const props = fAdd.properties as MarkerProperties | PolygonProperties;
         const relations = props.relations ?? [];
         if (relations.some((r) => r.featureId === feature.id)) return;
         props.relations = [...relations, { featureId: feature.id, label }];
@@ -871,9 +870,9 @@ export class FantasyMapView extends ItemView {
           (f) => (f.properties as { id: string }).id === properties.id,
         );
         if (featureIndex < 0) return;
-        const props = layer.data.features[featureIndex].properties as
-          | MarkerProperties
-          | PolygonProperties;
+        const fRem = layer.data.features[featureIndex];
+        if (!fRem) return;
+        const props = fRem.properties as MarkerProperties | PolygonProperties;
         props.relations = (props.relations ?? []).filter(
           (r) => r.featureId !== targetFeatureId,
         );
@@ -972,11 +971,10 @@ export class FantasyMapView extends ItemView {
             (feature.properties as { id: string }).id,
         );
         if (featureIndex >= 0) {
-          (
-            layer.data.features[featureIndex].properties as {
-              localMapId?: string;
-            }
-          ).localMapId = mapId;
+          const fLink = layer.data.features[featureIndex];
+          if (fLink) {
+            (fLink.properties as { localMapId?: string }).localMapId = mapId;
+          }
         }
 
         void this.plugin.saveSettings();

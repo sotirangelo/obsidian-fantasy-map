@@ -62,7 +62,7 @@ export class FeatureModal extends Modal {
       ? { ...existingProperties }
       : defaultProperties(featureType);
     this.layerOptions = layerOptions;
-    this.selectedLayerId = initialLayerId ?? layerOptions[0].id;
+    this.selectedLayerId = initialLayerId ?? layerOptions[0]?.id ?? "";
     this.onSubmit = onSubmit;
     this.onLinkLocalMap = onLinkLocalMap;
     this.allFeatures = allFeatures;

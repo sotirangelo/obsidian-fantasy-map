@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { untrack } from "svelte";
+
   interface LayerEntry {
     id: string;
     name: string;
@@ -14,7 +16,7 @@
 
   let { initialLayers, onAdd, onRename, onDelete }: Props = $props();
 
-  let layers = $state<LayerEntry[]>([...initialLayers]);
+  let layers = $state<LayerEntry[]>(untrack(() => [...initialLayers]));
   let newLayerName = $state("");
   let editingId = $state<string | null>(null);
   let editingName = $state("");

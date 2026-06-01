@@ -72,7 +72,6 @@ export class SelectionManager {
         const el = this.selectedLayer.getElement();
         if (el) {
           el.classList.remove("fantasy-map-marker--selected");
-          el.style.zIndex = "";
         }
       } else if (this.selectedLayer instanceof L.Polygon) {
         const feature = (
@@ -145,7 +144,6 @@ export class SelectionManager {
       const el = leafletLayer.getElement();
       if (el) {
         el.classList.add("fantasy-map-marker--selected");
-        el.style.zIndex = "1000";
       }
     } else if (leafletLayer instanceof L.Polygon) {
       const feature = (leafletLayer as unknown as { feature?: PolygonFeature })

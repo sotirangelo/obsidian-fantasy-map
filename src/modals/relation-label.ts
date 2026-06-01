@@ -24,7 +24,7 @@ export class RelationLabelModal extends Modal {
         text.inputEl.addEventListener("keydown", (e) => {
           if (e.key === "Enter") submit();
         });
-        activeWindow.setTimeout(() => { text.inputEl.focus(); }, 0);
+        window.setTimeout(() => { text.inputEl.focus(); }, 0);
       });
 
     const submit = () => {

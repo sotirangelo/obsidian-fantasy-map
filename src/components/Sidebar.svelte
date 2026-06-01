@@ -8,7 +8,7 @@
 
   let { registerUpdate }: Props = $props();
   let selected = $state<SidebarState | null>(null);
-  let noteContentEl: HTMLElement | null = $state(null);
+  let noteContentEl = $state<HTMLElement | null>(null);
   let noteLoading = $state(false);
   let noteError = $state(false);
 
@@ -22,19 +22,19 @@
 
   $effect(() => {
     const s = selected;
+    if (!s?.properties.note) return;
     const el = noteContentEl;
-    if (s?.properties.note && el) {
-      noteLoading = true;
-      noteError = false;
-      s.onReadNote(s.properties.note).then((content) => {
-        noteLoading = false;
-        if (content != null && noteContentEl) {
-          s.onRenderMarkdown(content, noteContentEl);
-        } else {
-          noteError = true;
-        }
-      });
-    }
+    if (!el) return;
+    noteLoading = true;
+    noteError = false;
+    void s.onReadNote(s.properties.note).then((content) => {
+      noteLoading = false;
+      if (content !== null) {
+        s.onRenderMarkdown(content, el);
+      } else {
+        noteError = true;
+      }
+    });
   });
 </script>
 
@@ -100,7 +100,7 @@
       {#if selected.properties.notes && selected.properties.notes.length > 0}
         <div class="sidebar-detail-section">
           <div class="sidebar-detail-label">Related notes</div>
-          {#each selected.properties.notes as notePath}
+          {#each selected.properties.notes as notePath (notePath)}
             <button
               class="sidebar-note-link"
               onclick={() => selected?.onOpenNote(notePath)}
@@ -115,7 +115,7 @@
         <div class="sidebar-detail-section">
           <div class="sidebar-detail-label">Tags</div>
           <div class="sidebar-tag-list">
-            {#each selected.properties.tags as tag}
+            {#each selected.properties.tags as tag (tag)}
               <button
                 class="sidebar-tag"
                 onclick={() => selected?.onSearchTag(tag)}>{tag}</button
@@ -129,7 +129,7 @@
         <div class="sidebar-detail-section">
           <div class="sidebar-detail-label">Relations</div>
           <div class="sidebar-relation-list">
-            {#each selected.relations as rel}
+            {#each selected.relations as rel (rel.featureId)}
               <div class="sidebar-relation-item">
                 {#if rel.label}
                   <span class="sidebar-relation-label">{rel.label}</span>
@@ -152,7 +152,7 @@
         <div class="sidebar-detail-section">
           <div class="sidebar-detail-label">Referenced by</div>
           <div class="sidebar-relation-list">
-            {#each selected.incomingRelations as rel}
+            {#each selected.incomingRelations as rel (rel.featureId)}
               <div class="sidebar-relation-item">
                 {#if rel.label}
                   <span class="sidebar-relation-label">{rel.label}</span>

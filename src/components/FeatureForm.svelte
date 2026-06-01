@@ -2,11 +2,11 @@
   import { untrack } from "svelte";
   import type { MarkerProperties, PolygonProperties } from "../types";
 
-  type RelationEntry = {
+  interface RelationEntry {
     featureId: string;
     featureName: string;
     label: string;
-  };
+  }
 
   type FeatureType = "marker" | "polygon";
 
@@ -106,12 +106,12 @@
       onSubmit(
         {
           ...base,
-          color: (initialProperties as MarkerProperties).color,
-        } as MarkerProperties,
+          color: (initialProperties).color,
+        },
         selectedLayerId,
       );
     } else {
-      onSubmit({ ...base, color } as PolygonProperties, selectedLayerId);
+      onSubmit({ ...base, color }, selectedLayerId);
     }
   }
 
@@ -330,7 +330,7 @@
             type="text"
             placeholder="Relationship type..."
             value={rel.label}
-            oninput={(e) => (relations[i].label = e.currentTarget.value)}
+            oninput={(e) => (rel.label = e.currentTarget.value)}
           />
           <span class="fantasy-map-relation-name">{rel.featureName}</span>
           <button
