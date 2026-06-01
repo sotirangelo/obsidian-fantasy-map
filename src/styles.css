@@ -1,5 +1,7 @@
 @import "../node_modules/leaflet/dist/leaflet.css";
 
+/* ── Core Layout ──────────────────────────────────────────────── */
+
 .fantasy-map-wrapper {
   height: 100%;
   width: 100%;
@@ -7,18 +9,58 @@
   position: relative;
 }
 
-/* All buttons inside the plugin get pointer cursor */
+.fantasy-map-container {
+  height: 100%;
+  width: 100%;
+  position: relative;
+  z-index: 0;
+}
+
+.leaflet-container {
+  background: var(--background-primary);
+}
+
+.leaflet-container.is-calibrating,
+.leaflet-container.is-measuring {
+  cursor: crosshair;
+}
+
+/* ── Shared Utilities ─────────────────────────────────────────── */
+
+/* Pill-shaped tag base — used in sidebar and feature form */
+.fm-tag {
+  padding: var(--size-2-1) var(--size-4-2);
+  border-radius: var(--radius-l);
+  background: var(--background-modifier-border);
+  color: var(--text-muted);
+  font-size: 0.8em;
+  border: none;
+}
+
+/* Icon remove/dismiss button base */
+.fm-remove-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.fm-remove-btn:hover {
+  color: var(--text-error);
+}
+
+/* ── Buttons ──────────────────────────────────────────────────── */
+
 .fantasy-map-wrapper button,
 .fantasy-map-create-form-wrapper button,
 .fantasy-map-modal button {
   cursor: pointer;
 }
 
-/* Shared button base */
 .fantasy-map-btn {
-  padding: 2px 8px;
-  border-radius: 4px;
-  border: 1px solid var(--background-modifier-border);
+  padding: var(--size-2-1) var(--size-4-2);
+  border-radius: var(--radius-s);
+  border: var(--border-width) solid var(--background-modifier-border);
   background: var(--interactive-normal);
   color: var(--text-normal);
   font-size: 0.8em;
@@ -35,17 +77,19 @@
 
 .fantasy-map-btn-danger:hover {
   background: var(--background-modifier-error);
-  color: white;
+  color: var(--text-on-accent);
 }
 
-.fantasy-map-container {
-  height: 100%;
-  width: 100%;
-  position: relative;
-  z-index: 0;
+.fantasy-map-btn-remove {
+  padding: var(--size-4-1) var(--size-4-2);
+  color: var(--text-error);
+  background: none;
+  border: var(--border-width) solid var(--text-error);
+  border-radius: var(--radius-s);
 }
 
-/* Sidebar */
+/* ── Sidebar ──────────────────────────────────────────────────── */
+
 .fantasy-map-sidebar {
   position: absolute;
   top: 0;
@@ -54,7 +98,7 @@
   height: 100%;
   z-index: 1000;
   overflow: hidden;
-  border-right: 1px solid var(--background-modifier-border);
+  border-right: var(--border-width) solid var(--background-modifier-border);
   background: var(--background-primary);
   transition: transform 0.2s ease;
 }
@@ -108,7 +152,6 @@
   gap: 0.5em;
 }
 
-
 .sidebar-detail-section {
   margin-bottom: 0;
 }
@@ -117,15 +160,20 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 4px;
+  margin-bottom: var(--size-4-1);
 }
 
-.sidebar-detail-label {
+/* Shared uppercase section label — also applied to scale bar title */
+.sidebar-detail-label,
+.fantasy-map-scale-bar .scale-bar-title {
   font-size: 0.75em;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--text-muted);
-  margin-bottom: 2px;
+}
+
+.sidebar-detail-label {
+  margin-bottom: var(--size-2-1);
 }
 
 .sidebar-note-content {
@@ -134,7 +182,7 @@
   max-height: 300px;
   overflow-y: auto;
   border-left: 2px solid var(--background-modifier-border);
-  padding-left: 8px;
+  padding-left: var(--size-4-2);
   margin-bottom: 0.5em;
 }
 
@@ -152,17 +200,12 @@
 .sidebar-tag-list {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
+  gap: var(--size-4-1);
 }
 
+/* .fm-tag provides base; sidebar tags are clickable so get hover */
 .sidebar-tag {
   display: inline-block;
-  padding: 2px 8px;
-  border-radius: 12px;
-  background: var(--background-modifier-border);
-  color: var(--text-muted);
-  font-size: 0.8em;
-  border: none;
 }
 
 .sidebar-tag:hover {
@@ -170,76 +213,60 @@
   color: var(--text-normal);
 }
 
-/* Feature form: notes & tags */
-.fantasy-map-notes-control {
+/* ── Feature Form: Notes, Tags & Relations ────────────────────── */
+
+.fantasy-map-notes-control,
+.fantasy-map-tags-control,
+.fantasy-map-relations-control {
   flex-direction: column;
   align-items: stretch;
 }
 
-.fantasy-map-note-row {
+.fantasy-map-note-row,
+.fantasy-map-tag-input-row,
+.fantasy-map-relation-row {
   display: flex;
-  gap: 4px;
-  margin-bottom: 4px;
+  gap: var(--size-4-1);
 }
 
-.fantasy-map-note-row input {
+.fantasy-map-note-row input,
+.fantasy-map-tag-input-row input,
+.fantasy-map-relation-row input {
   flex: 1;
 }
 
-.fantasy-map-btn-remove {
-  padding: 4px 8px;
-  color: var(--text-error);
-  background: none;
-  border: 1px solid var(--text-error);
-  border-radius: 4px;
+.fantasy-map-note-row {
+  margin-bottom: var(--size-4-1);
 }
 
-.fantasy-map-tags-control {
-  flex-direction: column;
-  align-items: stretch;
+.fantasy-map-relation-row {
+  align-items: center;
+  margin-bottom: var(--size-4-1);
 }
 
 .fantasy-map-tag-list {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
-  margin-bottom: 6px;
+  gap: var(--size-4-1);
+  margin-bottom: var(--size-2-3);
 }
 
+/* .fm-tag provides base styles */
 .fantasy-map-tag {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 2px 8px;
-  border-radius: 12px;
-  background: var(--background-modifier-border);
-  color: var(--text-muted);
-  font-size: 0.85em;
+  gap: var(--size-4-1);
 }
 
+/* .fm-remove-btn provides base styles */
 .fantasy-map-tag-remove {
-  background: none;
-  border: none;
-  padding: 0 2px;
-  color: var(--text-muted);
+  padding: 0 var(--size-2-1);
   font-size: 1em;
   line-height: 1;
 }
 
-.fantasy-map-tag-remove:hover {
-  color: var(--text-error);
-}
+/* ── Map Controls Overlay ─────────────────────────────────────── */
 
-.fantasy-map-tag-input-row {
-  display: flex;
-  gap: 4px;
-}
-
-.fantasy-map-tag-input-row input {
-  flex: 1;
-}
-
-/* Map controls overlay */
 .fantasy-map-controls-overlay {
   position: absolute;
   top: 0;
@@ -250,22 +277,14 @@
   pointer-events: none;
 }
 
-.leaflet-container {
-  background: var(--background-primary);
-}
-
-.leaflet-container.is-calibrating {
-  cursor: crosshair;
-}
-
-.leaflet-container.is-measuring {
-  cursor: crosshair;
-}
+/* ── Measure Popup ────────────────────────────────────────────── */
 
 .fantasy-map-measure-popup .leaflet-popup-content {
-  margin: 6px 10px;
+  margin: var(--size-2-3) 10px;
   font-size: 0.9em;
 }
+
+/* ── Empty & Error States ─────────────────────────────────────── */
 
 .fantasy-map-notice,
 .fantasy-map-error {
@@ -274,40 +293,47 @@
   color: var(--text-muted);
 }
 
+.fantasy-map-error {
+  color: var(--text-error);
+}
+
+.fantasy-map-form-error {
+  color: var(--text-error);
+  font-size: 0.9em;
+  margin: 0.5em 0;
+}
+
+/* ── Create Form ──────────────────────────────────────────────── */
+
 .fantasy-map-create-form-wrapper {
   max-width: 500px;
   margin: 4em auto;
   padding: 0 2em;
 }
 
-.fantasy-map-error {
-  color: var(--text-error);
-}
+/* ── Settings: Map Config Section ─────────────────────────────── */
 
-/* Settings: map config sections */
 .fantasy-map-config-section {
-  border: 1px solid var(--background-modifier-border);
-  border-radius: 8px;
-  padding: 12px;
-  margin-bottom: 16px;
+  border: var(--border-width) solid var(--background-modifier-border);
+  border-radius: var(--radius-m);
+  padding: var(--size-4-3);
+  margin-bottom: var(--size-4-4);
 }
 
-/* Scale bar */
+/* ── Scale Bar ────────────────────────────────────────────────── */
+
 .fantasy-map-scale-bar {
   background: none;
-  padding: 6px 10px;
+  padding: var(--size-2-3) 10px;
   font-size: 0.8em;
   line-height: 1.4;
   color: var(--text-normal);
   pointer-events: none;
 }
 
+/* .scale-bar-title typography shared with .sidebar-detail-label above */
 .fantasy-map-scale-bar .scale-bar-title {
-  font-size: 0.75em;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--text-muted);
-  margin-bottom: 4px;
+  margin-bottom: var(--size-4-1);
 }
 
 .fantasy-map-scale-bar .scale-bar-line {
@@ -315,16 +341,17 @@
   border-bottom: 2px solid var(--text-normal);
   border-left: 2px solid var(--text-normal);
   border-right: 2px solid var(--text-normal);
-  padding-top: 4px;
+  padding-top: var(--size-4-1);
 }
 
 .fantasy-map-scale-bar .scale-bar-label {
   text-align: center;
-  margin-top: 2px;
-  font-weight: 500;
+  margin-top: var(--size-2-1);
+  font-weight: var(--font-medium);
 }
 
-/* Selection highlight */
+/* ── Selection & Markers ──────────────────────────────────────── */
+
 .fantasy-map-selection-ring {
   animation: selection-pulse 1.5s ease-in-out infinite;
   stroke: var(--text-accent);
@@ -352,7 +379,6 @@
   animation: selection-pulse 1.5s ease-in-out infinite;
 }
 
-/* Dot marker icon */
 .fantasy-map-dot-icon {
   background: none;
   border: none;
@@ -367,14 +393,15 @@
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
 }
 
-/* Name tooltip for markers and polygons — scales with zoom */
+/* ── Tooltips & Relation Labels ───────────────────────────────── */
+
 .fantasy-map-name-tooltip {
   background: var(--background-primary);
-  border: 1px solid var(--background-modifier-border);
-  border-radius: 4px;
-  padding: 2px;
+  border: var(--border-width) solid var(--background-modifier-border);
+  border-radius: var(--radius-s);
+  padding: var(--size-2-1);
   font-size: 0.6rem;
-  font-weight: 500;
+  font-weight: var(--font-medium);
   color: var(--text-normal);
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
   white-space: nowrap;
@@ -384,15 +411,14 @@
   display: none;
 }
 
-/* Relation arrows */
 .fantasy-map-relation-label {
   background: var(--background-primary);
-  border: 1px dashed var(--background-modifier-border);
-  border-radius: 8px;
-  padding: 1px 8px;
+  border: var(--border-width) dashed var(--background-modifier-border);
+  border-radius: var(--radius-m);
+  padding: 1px var(--size-4-2);
   font-size: 0.5rem;
   font-style: italic;
-  font-weight: 400;
+  font-weight: var(--font-normal);
   letter-spacing: 0.03em;
   text-transform: lowercase;
   color: var(--text-muted);
@@ -402,11 +428,4 @@
 
 .fantasy-map-relation-label::before {
   display: none;
-}
-
-/* Form error */
-.fantasy-map-form-error {
-  color: var(--text-error);
-  font-size: 0.9em;
-  margin: 0.5em 0;
 }

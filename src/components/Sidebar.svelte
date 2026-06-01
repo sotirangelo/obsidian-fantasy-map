@@ -117,7 +117,7 @@
           <div class="sidebar-tag-list">
             {#each selected.properties.tags as tag (tag)}
               <button
-                class="sidebar-tag"
+                class="fm-tag sidebar-tag"
                 onclick={() => selected?.onSearchTag(tag)}>{tag}</button
               >
             {/each}
@@ -136,7 +136,7 @@
                 {/if}
                 <span class="sidebar-relation-name">{rel.featureName}</span>
                 <button
-                  class="sidebar-relation-remove"
+                  class="sidebar-relation-remove fm-remove-btn"
                   onclick={() => selected?.onRemoveRelation(rel.featureId)}
                   aria-label="Remove relation"
                 >
@@ -171,13 +171,13 @@
   .sidebar-relation-list {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: var(--size-4-1);
   }
 
   .sidebar-relation-item {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: var(--size-2-3);
     font-size: 0.9em;
   }
 
@@ -191,19 +191,12 @@
     font-style: italic;
   }
 
+  /* .fm-remove-btn provides background, border, color, cursor, hover */
   .sidebar-relation-remove {
     margin-left: auto;
-    background: none;
-    border: none;
-    color: var(--text-muted);
-    cursor: pointer;
-    padding: 2px;
+    padding: var(--size-2-1);
     display: flex;
     align-items: center;
     box-shadow: none;
-  }
-
-  .sidebar-relation-remove:hover {
-    color: var(--text-error);
   }
 </style>

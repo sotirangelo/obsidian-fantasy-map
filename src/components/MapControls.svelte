@@ -240,7 +240,7 @@
     z-index: 1000;
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: var(--size-4-1);
     pointer-events: auto;
   }
 
@@ -258,12 +258,12 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 6px;
+    gap: var(--size-2-3);
     width: 32px;
     height: 32px;
     padding: 0;
-    border: 1px solid var(--background-modifier-border);
-    border-radius: 6px;
+    border: var(--border-width) solid var(--background-modifier-border);
+    border-radius: var(--radius-m);
     background: var(--background-primary);
     color: var(--text-normal);
     cursor: pointer;
@@ -291,7 +291,7 @@
   .map-control-btn--danger.map-control-btn--active {
     background: var(--text-error);
     border-color: var(--text-error);
-    color: white;
+    color: var(--text-on-accent);
   }
 
   .map-control-btn--back {
@@ -318,6 +318,6 @@
   .map-controls-separator {
     height: 1px;
     background: var(--background-modifier-border);
-    margin: 2px 4px;
+    margin: var(--size-2-1) var(--size-4-1);
   }
 </style>

@@ -292,9 +292,9 @@
     {#if tags.length > 0}
       <div class="fantasy-map-tag-list">
         {#each tags as tag, i (i)}
-          <span class="fantasy-map-tag">
+          <span class="fm-tag fantasy-map-tag">
             {tag}
-            <button type="button" class="fantasy-map-tag-remove" onclick={() => removeTag(i)}
+            <button type="button" class="fantasy-map-tag-remove fm-remove-btn" onclick={() => removeTag(i)}
               >×</button
             >
           </span>
@@ -401,25 +401,9 @@
 </form>
 
 <style>
-  .fantasy-map-relations-control {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .fantasy-map-relation-row {
-    display: flex;
-    gap: 4px;
-    margin-bottom: 4px;
-    align-items: center;
-  }
-
   .fantasy-map-relation-name {
     font-size: 0.9em;
     white-space: nowrap;
-  }
-
-  .fantasy-map-relation-row input {
-    flex: 1;
   }
 
   .fantasy-map-linked-label {

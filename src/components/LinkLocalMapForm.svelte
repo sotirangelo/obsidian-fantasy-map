@@ -154,11 +154,11 @@
     display: flex;
     gap: 0;
     margin-bottom: 1em;
-    border-bottom: 1px solid var(--background-modifier-border);
+    border-bottom: var(--border-width) solid var(--background-modifier-border);
   }
 
   .fantasy-map-tab {
-    padding: 6px 16px;
+    padding: var(--size-2-3) var(--size-4-4);
     background: none;
     border: none;
     border-bottom: 2px solid transparent;

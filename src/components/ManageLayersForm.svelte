@@ -148,25 +148,25 @@
   .manage-layers-list {
     display: flex;
     flex-direction: column;
-    gap: 4px;
-    margin-bottom: 16px;
+    gap: var(--size-4-1);
+    margin-bottom: var(--size-4-4);
     min-height: 40px;
   }
 
   .manage-layers-empty {
     color: var(--text-muted);
     font-style: italic;
-    margin: 8px 0;
+    margin: var(--size-4-2) 0;
   }
 
   .manage-layers-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 8px;
-    padding: 6px 8px;
-    border-radius: 6px;
-    border: 1px solid var(--background-modifier-border);
+    gap: var(--size-4-2);
+    padding: var(--size-2-3) var(--size-4-2);
+    border-radius: var(--radius-m);
+    border: var(--border-width) solid var(--background-modifier-border);
     min-height: 36px;
   }
 
@@ -179,7 +179,7 @@
   }
 
   .manage-layers-name {
-    font-weight: 500;
+    font-weight: var(--font-medium);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -203,16 +203,16 @@
 
   .manage-layers-actions {
     display: flex;
-    gap: 4px;
+    gap: var(--size-4-1);
     flex-shrink: 0;
   }
 
   .manage-layers-add {
     display: flex;
-    gap: 8px;
+    gap: var(--size-4-2);
     align-items: center;
-    padding-top: 8px;
-    border-top: 1px solid var(--background-modifier-border);
+    padding-top: var(--size-4-2);
+    border-top: var(--border-width) solid var(--background-modifier-border);
   }
 
   .manage-layers-new-input {
