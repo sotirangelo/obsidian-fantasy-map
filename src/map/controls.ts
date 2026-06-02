@@ -25,16 +25,16 @@ export function createScaleBar(
     const { distance, barPixels } = computeBar(pixelsPerUnit, 200);
     scaleBarDiv.replaceChildren();
 
-    const title = activeDocument.createDiv({ cls: "scale-bar-title fm-section-label" });
+    const title = scaleBarDiv.createDiv({
+      cls: "scale-bar-title fm-section-label",
+    });
     title.textContent = "Scale";
 
-    const line = activeDocument.createDiv({ cls: "scale-bar-line" });
+    const line = scaleBarDiv.createDiv({ cls: "scale-bar-line" });
     line.style.width = `${Math.round(barPixels).toString()}px`;
 
-    const label = activeDocument.createDiv({ cls: "scale-bar-label" });
+    const label = scaleBarDiv.createDiv({ cls: "scale-bar-label" });
     label.textContent = `${distance.toString()} ${scale.unit}`;
-
-    scaleBarDiv.append(title, line, label);
   };
 
   updateContent();

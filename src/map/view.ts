@@ -312,7 +312,8 @@ export class FantasyMapView extends ItemView {
         onCancelMeasure: () => measure.cleanup(),
         onManageLayers: () => layerMgr.promptManage(),
         onModeChange: (mode: string | null) => {
-          this.shapeEditingActive = mode === "edit" || mode === "drag" || mode === "removal";
+          this.shapeEditingActive =
+            mode === "edit" || mode === "drag" || mode === "removal";
         },
         parentName:
           parentConfig?.name ?? (config.parentMapId ? "Parent Map" : undefined),
