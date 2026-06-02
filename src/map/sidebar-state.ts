@@ -31,6 +31,36 @@ export function getAllFeatureRefs(
   return features;
 }
 
+function findFeatureById(
+  featureId: string,
+  layers: LoadedLayer[],
+): { feature: MapFeature; layer: LoadedLayer } | undefined {
+  for (const loaded of layers) {
+    const feature = loaded.data.features.find(
+      (f) => (f.properties as { id: string }).id === featureId,
+    ) as MapFeature | undefined;
+    if (feature) return { feature, layer: loaded };
+  }
+  return undefined;
+}
+
+function findLeafletLayerForFeature(
+  featureId: string,
+  layers: LoadedLayer[],
+): L.Layer | undefined {
+  for (const loaded of layers) {
+    if (!loaded.leafletLayer) continue;
+    let found: L.Layer | undefined;
+    loaded.leafletLayer.eachLayer((l) => {
+      const f = (l as L.Layer & { feature?: { properties?: { id?: string } } })
+        .feature;
+      if (f?.properties?.id === featureId) found = l;
+    });
+    if (found) return found;
+  }
+  return undefined;
+}
+
 function resolveRelations(
   props: MarkerProperties | PolygonProperties,
   layers: LoadedLayer[],
@@ -98,6 +128,30 @@ export class SidebarStateBuilder {
       },
       onRemoveRelation: (targetFeatureId: string) => {
         this.featureCtrl.removeRelation(props, layer, targetFeatureId);
+      },
+      onSelectFeature: (featureId: string) => {
+        const found = findFeatureById(featureId, this.ctx.layers);
+        if (!found) return;
+        const featureType =
+          found.feature.geometry.type === "Point" ? "marker" : "polygon";
+        const state = this.build(
+          featureType,
+          found.feature.properties,
+          found.feature,
+          found.layer,
+        );
+        const leafletLayer = findLeafletLayerForFeature(
+          featureId,
+          this.ctx.layers,
+        );
+        this.ctx.selectFeature(state, leafletLayer);
+        if (leafletLayer) {
+          const center =
+            leafletLayer instanceof L.Marker
+              ? leafletLayer.getLatLng()
+              : (leafletLayer as L.Polygon).getBounds().getCenter();
+          this.ctx.map.panTo(center);
+        }
       },
       onOpenLocalMap: props.localMapId
         ? () => void this.ctx.plugin.openMap(props.localMapId!)

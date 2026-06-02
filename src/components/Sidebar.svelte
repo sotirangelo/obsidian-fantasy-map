@@ -170,7 +170,11 @@
                 {#if rel.label}
                   <span class="sidebar-relation-label">{rel.label}</span>
                 {/if}
-                <span class="sidebar-relation-name">{rel.featureName}</span>
+                <button
+                  class="sidebar-text-link sidebar-relation-name"
+                  onclick={() => selected?.onSelectFeature(rel.featureId)}
+                  >{rel.featureName}</button
+                >
                 <button
                   class="sidebar-relation-remove fm-remove-btn"
                   onclick={() => selected?.onRemoveRelation(rel.featureId)}
@@ -193,7 +197,11 @@
                 {#if rel.label}
                   <span class="sidebar-relation-label">{rel.label}</span>
                 {/if}
-                <span class="sidebar-relation-name">{rel.featureName}</span>
+                <button
+                  class="sidebar-text-link sidebar-relation-name"
+                  onclick={() => selected?.onSelectFeature(rel.featureId)}
+                  >{rel.featureName}</button
+                >
               </div>
             {/each}
           </div>
@@ -348,10 +356,6 @@
     align-items: center;
     gap: var(--size-2-3);
     font-size: 0.9em;
-  }
-
-  .sidebar-relation-name {
-    color: var(--text-normal);
   }
 
   .sidebar-relation-label {
