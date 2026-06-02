@@ -5,9 +5,11 @@ import type {
   LayerConfig,
   LoadedLayer,
   MarkerFeature,
+  MarkerProperties,
   PolygonFeature,
   PolygonProperties,
 } from "../types";
+import { offsetPolygonOutward } from "./geometry";
 import { loadConfiguredLayers } from "./layers";
 import type { MapContext } from "./context";
 import type { SidebarStateBuilder } from "./sidebar-state";
@@ -28,6 +30,9 @@ export class LayerManager {
   }
 
   addToMap(layer: LoadedLayer): void {
+    const rings = L.layerGroup();
+    layer.rings = rings;
+
     const leafletLayer = L.geoJSON(layer.data, {
       pointToLayer: (feature, latlng) => {
         return this.sidebarBuilder.createInteractiveMarker(
@@ -49,6 +54,28 @@ export class LayerManager {
         return {};
       },
       onEachFeature: (feature, leafletFeature) => {
+        const scale = this.ctx.config.scale;
+        const pxPerUnit = scale ? scale.pixelDistance / scale.realDistance : 1;
+
+        if (feature.geometry.type === "Point") {
+          const props = feature.properties as MarkerProperties;
+          if (props.ring) {
+            const marker = leafletFeature as L.Marker;
+            const circle = L.circle(marker.getLatLng(), {
+              radius: props.ring.radius * pxPerUnit,
+              color: props.ring.color,
+              fillColor: props.ring.color,
+              fillOpacity: 0.2,
+              weight: 1,
+              interactive: false,
+              className: "fantasy-map-feature-ring",
+            });
+            rings.addLayer(circle);
+            marker.on("drag", () => circle.setLatLng(marker.getLatLng()));
+          }
+          return;
+        }
+
         if (
           feature.geometry.type === "Polygon" ||
           feature.geometry.type === "MultiPolygon"
@@ -70,10 +97,27 @@ export class LayerManager {
             leafletFeature as L.Polygon,
             layer,
           );
+          if (props.ring) {
+            const outerLatLngs = offsetPolygonOutward(
+              (leafletFeature as L.Polygon).getLatLngs() as L.LatLng[] | L.LatLng[][],
+              props.ring.radius * pxPerUnit,
+            );
+            const ringPoly = L.polygon(outerLatLngs, {
+              color: props.ring.color,
+              fillColor: props.ring.color,
+              fillOpacity: 0.2,
+              weight: 1,
+              interactive: false,
+              className: "fantasy-map-feature-ring",
+            });
+            rings.addLayer(ringPoly);
+            ringPoly.bringToBack();
+          }
         }
       },
     });
     leafletLayer.addTo(this.ctx.map);
+    rings.addTo(this.ctx.map);
     this.ctx.layerControl.addOverlay(leafletLayer, layer.config.name);
     layer.leafletLayer = leafletLayer;
   }

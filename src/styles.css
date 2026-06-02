@@ -69,7 +69,12 @@
 :is(.fantasy-map-wrapper, .fantasy-map-create-form-wrapper, .fantasy-map-modal)
   button:enabled,
 .fantasy-map-modal
-  :is(select:enabled, input[type="color"]:enabled, .modal-close-button) {
+  :is(
+    select:enabled,
+    input[type="color"]:enabled,
+    .modal-close-button,
+    input[type="checkbox"]:enabled
+  ) {
   cursor: pointer;
 }
 

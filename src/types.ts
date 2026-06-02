@@ -40,6 +40,11 @@ export interface FeatureRelation {
   label: string;
 }
 
+export interface FeatureRing {
+  color: string;
+  radius: number;
+}
+
 export interface MarkerProperties {
   id: string;
   name: string;
@@ -50,6 +55,7 @@ export interface MarkerProperties {
   notes?: string[];
   tags?: string[];
   relations?: FeatureRelation[];
+  ring?: FeatureRing;
 }
 
 export interface PolygonProperties {
@@ -62,6 +68,7 @@ export interface PolygonProperties {
   notes?: string[];
   tags?: string[];
   relations?: FeatureRelation[];
+  ring?: FeatureRing;
 }
 
 export type MarkerFeature = Feature<Point, MarkerProperties>;
@@ -73,6 +80,7 @@ export interface LoadedLayer {
   config: LayerConfig;
   data: MapFeatureCollection;
   leafletLayer: L.GeoJSON | null;
+  rings: L.LayerGroup | null;
 }
 
 export interface SidebarState {

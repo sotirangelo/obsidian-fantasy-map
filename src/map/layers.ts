@@ -9,6 +9,6 @@ export function loadConfiguredLayers(
       type: "FeatureCollection",
       features,
     };
-    return { config, data, leafletLayer: null };
+    return { config, data, leafletLayer: null, rings: null };
   });
 }

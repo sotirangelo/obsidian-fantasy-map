@@ -72,6 +72,8 @@ export class FeatureController {
         this.localMapLinker.openLinkForNew(featureId, cb);
       },
       getAllFeatureRefs(this.ctx.layers),
+      undefined,
+      this.ctx.config.scale?.unit,
     ).open();
   }
 
@@ -123,6 +125,8 @@ export class FeatureController {
         this.localMapLinker.openLinkForNew(featureId, cb);
       },
       getAllFeatureRefs(this.ctx.layers),
+      undefined,
+      this.ctx.config.scale?.unit,
     ).open();
   }
 
@@ -168,6 +172,7 @@ export class FeatureController {
       },
       getAllFeatureRefs(this.ctx.layers, properties.id),
       layer.config.id,
+      this.ctx.config.scale?.unit,
     ).open();
   }
 

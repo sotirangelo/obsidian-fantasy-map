@@ -1,6 +1,8 @@
 <script lang="ts">
   import { untrack } from "svelte";
+  import * as v from "valibot";
   import type { MarkerProperties, PolygonProperties } from "../types";
+  import { FeatureRingSchema } from "../schemas";
   import { icon } from "../utils";
 
   interface RelationEntry {
@@ -17,6 +19,7 @@
     layerOptions: { id: string; name: string }[];
     initialLayerId: string;
     isEdit: boolean;
+    scaleUnit?: string;
     onBrowseNote: (cb: (path: string) => void) => void;
     onBrowseTag: (cb: (tag: string) => void) => void;
     onLinkLocalMap?: (cb: (mapId: string) => void) => void;
@@ -36,6 +39,7 @@
     layerOptions,
     initialLayerId,
     isEdit,
+    scaleUnit,
     onBrowseNote,
     onBrowseTag,
     onLinkLocalMap,
@@ -43,6 +47,8 @@
     onBrowseFeature,
     onSubmit,
   }: Props = $props();
+
+  const radiusUnit = $derived(scaleUnit ?? "px");
 
   const label = untrack(() => (featureType === "marker" ? "Marker" : "Region"));
 
@@ -77,11 +83,31 @@
 
   let color = $state(untrack(() => initialProperties.color));
 
+  let ringEnabled = $state(untrack(() => initialProperties.ring !== undefined));
+  let ringColor = $state(
+    untrack(() => initialProperties.ring?.color ?? "#ffffff"),
+  );
+  let ringRadius = $state(untrack(() => initialProperties.ring?.radius ?? 50));
+
   function handleSubmit() {
     if (!name.trim()) {
       error = `${label} name is required`;
       return;
     }
+
+    let ring: { color: string; radius: number } | undefined;
+    if (ringEnabled) {
+      const parsed = v.safeParse(FeatureRingSchema, {
+        color: ringColor,
+        radius: ringRadius,
+      });
+      if (!parsed.success) {
+        error = parsed.issues[0].message;
+        return;
+      }
+      ring = parsed.output;
+    }
+
     error = "";
 
     const filteredNotes = notes.filter((n) => n.trim());
@@ -101,6 +127,7 @@
         notes: filteredNotes.length > 0 ? filteredNotes : undefined,
         tags: filteredTags.length > 0 ? filteredTags : undefined,
         relations: filteredRelations.length > 0 ? filteredRelations : undefined,
+        ring,
       },
       selectedLayerId,
     );
@@ -211,6 +238,45 @@
         value={color}
         oninput={(e) => (color = e.currentTarget.value)}
       />
+    </div>
+  </div>
+
+  <div class="setting-item">
+    <div class="setting-item-info">
+      <div class="setting-item-name">Ring radius ({radiusUnit})</div>
+      <div class="setting-item-description">
+        Optional area around the {label.toLowerCase()}{scaleUnit
+          ? `, in ${scaleUnit} (from map scale)`
+          : ", in pixels (set a map scale to use real-world units)"}
+      </div>
+    </div>
+    <div class="setting-item-control">
+      <label class="fantasy-map-ring-toggle">
+        <input
+          type="checkbox"
+          checked={ringEnabled}
+          onchange={(e) => (ringEnabled = e.currentTarget.checked)}
+        />
+        Enable
+      </label>
+      {#if ringEnabled}
+        <input
+          type="color"
+          aria-label="Ring color"
+          value={ringColor}
+          oninput={(e) => (ringColor = e.currentTarget.value)}
+        />
+        <input
+          type="number"
+          aria-label={`Ring radius in ${radiusUnit}`}
+          value={ringRadius}
+          oninput={(e) => {
+            const n = Number(e.currentTarget.value);
+            if (Number.isFinite(n)) ringRadius = n;
+          }}
+        />
+        <span class="fantasy-map-ring-unit">{radiusUnit}</span>
+      {/if}
     </div>
   </div>
 
@@ -425,5 +491,26 @@
   .fantasy-map-linked-label {
     color: var(--text-success);
     font-size: 0.9em;
+  }
+
+  .fantasy-map-ring-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--size-4-1);
+    font-size: 0.9em;
+  }
+
+  .fantasy-map-ring-unit {
+    font-size: 0.8em;
+    color: var(--text-muted);
+  }
+
+  :global(.setting-item-control:has(.fantasy-map-ring-toggle)) {
+    gap: var(--size-4-2);
+  }
+
+  :global(.setting-item-control:has(.fantasy-map-ring-toggle))
+    > input[type="number"] {
+    width: 5em;
   }
 </style>

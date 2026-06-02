@@ -5,6 +5,14 @@ const FeatureRelationSchema = v.object({
   label: v.string(),
 });
 
+export const FeatureRingSchema = v.object({
+  color: v.pipe(v.string(), v.nonEmpty("Ring color is required")),
+  radius: v.pipe(
+    v.number("Ring radius must be a number"),
+    v.minValue(1, "Ring radius must be at least 1"),
+  ),
+});
+
 const FeaturePropertiesSchema = v.object({
   id: v.string(),
   name: v.string(),
@@ -15,6 +23,7 @@ const FeaturePropertiesSchema = v.object({
   notes: v.optional(v.array(v.string())),
   tags: v.optional(v.array(v.string())),
   relations: v.optional(v.array(FeatureRelationSchema)),
+  ring: v.optional(FeatureRingSchema),
 });
 
 const PointGeometrySchema = v.object({

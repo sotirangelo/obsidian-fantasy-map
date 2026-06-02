@@ -43,6 +43,7 @@ export class FeatureModal extends Modal {
   ) => void;
   private allFeatures: { id: string; name: string }[];
   private isEdit: boolean;
+  private scaleUnit?: string;
   private mountedForm: ReturnType<typeof mount> | null = null;
 
   constructor(
@@ -54,6 +55,7 @@ export class FeatureModal extends Modal {
     onLinkLocalMap?: (featureId: string, cb: (mapId: string) => void) => void,
     allFeatures: { id: string; name: string }[] = [],
     initialLayerId?: string,
+    scaleUnit?: string,
   ) {
     super(app);
 
@@ -69,6 +71,7 @@ export class FeatureModal extends Modal {
     this.onSubmit = onSubmit;
     this.onLinkLocalMap = onLinkLocalMap;
     this.allFeatures = allFeatures;
+    this.scaleUnit = scaleUnit;
   }
 
   onOpen(): void {
@@ -94,6 +97,7 @@ export class FeatureModal extends Modal {
             }
           : undefined,
         allFeatures: this.allFeatures,
+        scaleUnit: this.scaleUnit,
         onBrowseFeature: (
           cb: (featureId: string, featureName: string) => void,
         ) => {

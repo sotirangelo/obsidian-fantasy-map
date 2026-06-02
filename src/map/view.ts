@@ -248,6 +248,7 @@ export class FantasyMapView extends ItemView {
         };
         void this.plugin.saveSettings().then(() => {
           this.renderScaleBar(cfg);
+          this.refreshMapLayers();
           new Notice(
             `Scale set: ${realDistance.toString()} ${unit} between the two points`,
           );
@@ -431,6 +432,7 @@ export class FantasyMapView extends ItemView {
 
     for (const layer of this.layers) {
       if (layer.leafletLayer) {
+        layer.rings?.clearLayers();
         layer.leafletLayer.clearLayers();
         layer.leafletLayer.addData(layer.data);
       }
