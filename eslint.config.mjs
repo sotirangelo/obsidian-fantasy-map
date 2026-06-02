@@ -13,6 +13,7 @@ export default defineConfig(
     "main.js",
     "eslint.config.mjs",
     "esbuild.config.mjs",
+    "version-bump.mjs",
     "package.json",
   ]),
   eslint.configs.recommended,
