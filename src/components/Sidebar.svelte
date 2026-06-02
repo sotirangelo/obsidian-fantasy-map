@@ -252,6 +252,7 @@
     display: inline-flex;
     align-items: center;
     gap: var(--size-2-1);
+    background: none;
     border: none;
     text-decoration: var(--link-decoration);
     text-decoration-thickness: var(--link-decoration-thickness);
@@ -264,6 +265,7 @@
 
   .sidebar-text-link:hover {
     color: var(--link-color-hover);
+    background: none;
     text-decoration: var(--link-decoration-hover);
   }
 
@@ -279,6 +281,7 @@
 
   .sidebar-buttons {
     display: flex;
+    flex-wrap: wrap;
     gap: var(--size-4-2);
   }
 

@@ -241,7 +241,7 @@
     </div>
   </div>
 
-  <div class="setting-item">
+  <div class="setting-item setting-item--stacked">
     <div class="setting-item-info">
       <div class="setting-item-name">Ring radius ({radiusUnit})</div>
       <div class="setting-item-description">
@@ -280,7 +280,7 @@
     </div>
   </div>
 
-  <div class="setting-item">
+  <div class="setting-item setting-item--stacked">
     <div class="setting-item-info">
       <div class="setting-item-name">Description</div>
       <div class="setting-item-description">
@@ -291,6 +291,7 @@
     </div>
     <div class="setting-item-control">
       <textarea
+        class="fantasy-map-description-textarea"
         placeholder={featureType === "marker"
           ? "A bustling port city on the sword coast"
           : "A dense, ancient forest..."}
@@ -316,11 +317,13 @@
         value={note}
         oninput={(e) => (note = e.currentTarget.value)}
       />
-      <button type="button" onclick={browseMainNote}>Browse</button>
+      <button type="button" class="fantasy-map-btn" onclick={browseMainNote}
+        >Browse</button
+      >
     </div>
   </div>
 
-  <div class="setting-item">
+  <div class="setting-item setting-item--stacked">
     <div class="setting-item-info">
       <div class="setting-item-name">Additional notes</div>
       <div class="setting-item-description">
@@ -336,8 +339,10 @@
             value={n}
             oninput={(e) => (notes[i] = e.currentTarget.value)}
           />
-          <button type="button" onclick={() => browseAdditionalNote(i)}
-            >Browse</button
+          <button
+            type="button"
+            class="fantasy-map-btn"
+            onclick={() => browseAdditionalNote(i)}>Browse</button
           >
           <button
             type="button"
@@ -353,7 +358,7 @@
     </div>
   </div>
 
-  <div class="setting-item">
+  <div class="setting-item setting-item--stacked">
     <div class="setting-item-info">
       <div class="setting-item-name">Tags</div>
       <div class="setting-item-description">Tags for categorization</div>
@@ -384,16 +389,21 @@
           oninput={(e) => (tagInput = e.currentTarget.value)}
           onkeydown={handleTagKeydown}
         />
-        <button type="button" onclick={addTag} disabled={!tagInput.trim()}
-          >Add</button
+        <button
+          type="button"
+          class="fantasy-map-btn"
+          onclick={addTag}
+          disabled={!tagInput.trim()}>Add</button
         >
-        <button type="button" onclick={browseTag}>Browse tags</button>
+        <button type="button" class="fantasy-map-btn" onclick={browseTag}
+          >Browse tags</button
+        >
       </div>
     </div>
   </div>
 
   {#if onBrowseFeature}
-    <div class="setting-item">
+    <div class="setting-item setting-item--stacked">
       <div class="setting-item-info">
         <div class="setting-item-name">Relations</div>
         <div class="setting-item-description">
@@ -483,14 +493,35 @@
 </form>
 
 <style>
+  .setting-item--stacked {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .setting-item--stacked .setting-item-control {
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    width: 100%;
+  }
+
   .fantasy-map-relation-name {
     font-size: 0.9em;
+    flex: 0 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
     white-space: nowrap;
   }
 
   .fantasy-map-linked-label {
     color: var(--text-success);
     font-size: 0.9em;
+  }
+
+  .fantasy-map-description-textarea {
+    width: 100%;
+    min-height: 5em;
+    resize: vertical;
   }
 
   .fantasy-map-ring-toggle {
