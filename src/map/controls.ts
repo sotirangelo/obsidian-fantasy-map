@@ -25,7 +25,7 @@ export function createScaleBar(
     const { distance, barPixels } = computeBar(pixelsPerUnit, 200);
     scaleBarDiv.replaceChildren();
 
-    const title = activeDocument.createDiv({ cls: "scale-bar-title" });
+    const title = activeDocument.createDiv({ cls: "scale-bar-title fm-section-label" });
     title.textContent = "Scale";
 
     const line = activeDocument.createDiv({ cls: "scale-bar-line" });

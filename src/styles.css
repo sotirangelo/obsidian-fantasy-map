@@ -56,6 +56,14 @@
   box-shadow: none;
 }
 
+/* Uppercase section label — used in sidebar and scale bar */
+.fm-section-label {
+  font-size: 0.75em;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+}
+
 /* ── Buttons ──────────────────────────────────────────────────── */
 
 :is(.fantasy-map-wrapper, .fantasy-map-create-form-wrapper, .fantasy-map-modal)
@@ -108,109 +116,10 @@
 }
 
 .fantasy-map-sidebar-content {
+  overflow-x: hidden;
   overflow-y: auto;
   height: 100%;
-  padding: 1em;
-}
-
-.sidebar-sections {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75em;
-}
-
-.sidebar-marker-title {
-  margin: 0;
-  font-size: 1.1em;
-  color: var(--text-accent);
-}
-
-.sidebar-marker-description {
-  margin: 0.25em 0 0;
-  color: var(--text-muted);
-  font-size: 0.9em;
-}
-
-.sidebar-note-link {
-  display: block;
-  margin-bottom: 0.75em;
-  color: var(--text-accent);
-  text-decoration: underline;
-  background: none;
-  border: none;
-  padding: 0 0.5rem;
-  font: inherit;
-  text-align: left;
-}
-
-.sidebar-note-link:hover {
-  color: var(--text-accent-hover);
-}
-
-.sidebar-buttons {
-  display: flex;
-  gap: 0.5em;
-}
-
-.sidebar-detail-section {
-  margin-bottom: 0;
-}
-
-.sidebar-detail-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: var(--size-4-1);
-}
-
-/* Shared uppercase section label — also applied to scale bar title */
-.sidebar-detail-label,
-.fantasy-map-scale-bar .scale-bar-title {
-  font-size: 0.75em;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--text-muted);
-}
-
-.sidebar-detail-label {
-  margin-bottom: var(--size-2-1);
-}
-
-.sidebar-note-content {
-  font-size: 0.85em;
-  line-height: 1.5;
-  max-height: 300px;
-  overflow-y: auto;
-  border-left: 2px solid var(--background-modifier-border);
-  padding-left: var(--size-4-2);
-  margin-bottom: 0.5em;
-}
-
-.sidebar-note-loading,
-.sidebar-note-error {
-  font-size: 0.85em;
-  color: var(--text-muted);
-  margin: 0 0 0.5em;
-}
-
-.sidebar-note-error {
-  color: var(--text-error);
-}
-
-.sidebar-tag-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--size-4-1);
-}
-
-/* .fm-tag provides base; sidebar tags are clickable so get hover */
-.sidebar-tag {
-  display: inline-block;
-}
-
-.sidebar-tag:hover {
-  background: var(--background-modifier-border-hover);
-  color: var(--text-normal);
+  padding: var(--size-4-1);
 }
 
 /* ── Feature Form: Notes, Tags & Relations ────────────────────── */
@@ -235,13 +144,13 @@
   flex: 1;
 }
 
-.fantasy-map-note-row {
+.fantasy-map-note-row,
+.fantasy-map-relation-row {
   margin-bottom: var(--size-4-1);
 }
 
 .fantasy-map-relation-row {
   align-items: center;
-  margin-bottom: var(--size-4-1);
 }
 
 .fantasy-map-tag-list {
@@ -331,7 +240,6 @@
   pointer-events: none;
 }
 
-/* .scale-bar-title typography shared with .sidebar-detail-label above */
 .fantasy-map-scale-bar .scale-bar-title {
   margin-bottom: var(--size-4-1);
 }
