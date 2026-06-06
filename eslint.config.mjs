@@ -5,6 +5,7 @@ import globals from "globals";
 import obsidianmd from "eslint-plugin-obsidianmd";
 import eslintConfigPrettier from "eslint-config-prettier";
 import svelte from "eslint-plugin-svelte";
+import noRelativeImportPaths from "eslint-plugin-no-relative-import-paths";
 
 export default defineConfig(
   globalIgnores([
@@ -31,10 +32,15 @@ export default defineConfig(
     },
   },
   {
+    plugins: { "no-relative-import-paths": noRelativeImportPaths },
     rules: {
       "@typescript-eslint/no-non-null-assertion": "off",
       "@typescript-eslint/no-confusing-void-expression": "off",
       "@typescript-eslint/no-deprecated": "off",
+      "no-relative-import-paths/no-relative-import-paths": [
+        "error",
+        { allowSameFolder: true },
+      ],
     },
   },
   svelte.configs.recommended,
