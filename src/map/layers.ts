@@ -1,4 +1,4 @@
-import type { MapFeatureCollection, LoadedLayer, LayerConfig } from "../types";
+import type { MapFeatureCollection, LoadedLayer, LayerConfig } from 'src/types';
 
 export function loadConfiguredLayers(
   layerConfigs: LayerConfig[],

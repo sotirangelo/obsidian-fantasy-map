@@ -22,7 +22,10 @@
     "allowSyntheticDefaultImports": true,
     "useUnknownInCatchVariables": true,
     "lib": ["DOM", "ES2021"],
-    "noEmit": true
+    "noEmit": true,
+    "paths": {
+      "src/*": ["./src/*"]
+    }
   },
   "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.svelte"]
 }

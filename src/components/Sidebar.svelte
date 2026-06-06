@@ -1,6 +1,6 @@
 <script lang="ts">
-  import type { SidebarState } from "../types";
-  import { icon } from "../utils";
+  import type { SidebarState } from 'src/types';
+  import { icon } from 'src/utils';
 
   interface Props {
     registerUpdate: (fn: (state: SidebarState | null) => void) => void;

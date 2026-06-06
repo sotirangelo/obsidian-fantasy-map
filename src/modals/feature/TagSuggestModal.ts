@@ -1,5 +1,5 @@
 import { App, FuzzySuggestModal } from "obsidian";
-import type { ExtendedMetadataCache } from "../../types";
+import type { ExtendedMetadataCache } from 'src/types';
 
 export class TagSuggestModal extends FuzzySuggestModal<string> {
   private onChooseCallback: (tag: string) => void;

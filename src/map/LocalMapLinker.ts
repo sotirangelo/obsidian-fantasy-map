@@ -1,5 +1,5 @@
-import { LinkLocalMapModal } from "../modals";
-import type { LoadedLayer, MapFeature } from "../types";
+import { LinkLocalMapModal } from 'src/modals';
+import type { LoadedLayer, MapFeature } from 'src/types';
 import type { MapContext } from "./context";
 
 export class LocalMapLinker {

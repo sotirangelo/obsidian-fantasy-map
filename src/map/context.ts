@@ -1,11 +1,11 @@
 import type * as L from "leaflet";
-import type FantasyMapPlugin from "../main";
+import type FantasyMapPlugin from 'src/main';
 import type {
   LoadedLayer,
   MapConfig,
   ObsidianApp,
   SidebarState,
-} from "../types";
+} from 'src/types';
 import type { SelectionManager } from "./SelectionManager";
 
 export interface MapContext {

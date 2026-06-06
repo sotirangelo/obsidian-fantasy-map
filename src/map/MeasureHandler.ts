@@ -1,7 +1,7 @@
 import { Notice } from "obsidian";
 import * as L from "leaflet";
 import { pixelDistance } from "./scales";
-import type { MapConfig } from "../types";
+import type { MapConfig } from 'src/types';
 
 export type MeasureMode = "off" | "point1" | "point2";
 

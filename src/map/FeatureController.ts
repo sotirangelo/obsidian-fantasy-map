@@ -5,14 +5,14 @@ import {
   FeatureSuggestModal,
   DeleteConfirmModal,
   RelationLabelModal,
-} from "../modals";
+} from 'src/modals';
 import type {
   LoadedLayer,
   MarkerFeature,
   MarkerProperties,
   PolygonFeature,
   PolygonProperties,
-} from "../types";
+} from 'src/types';
 import type { MapContext } from "./context";
 import type { LocalMapLinker } from "./LocalMapLinker";
 import { getAllFeatureRefs } from "./SidebarStateBuilder";

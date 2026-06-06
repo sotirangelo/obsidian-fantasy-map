@@ -1,6 +1,6 @@
 import { App, Modal } from "obsidian";
 import { mount, unmount } from "svelte";
-import ManageLayersForm from "../components/ManageLayersForm.svelte";
+import ManageLayersForm from 'src/components/ManageLayersForm.svelte';
 
 interface LayerEntry {
   id: string;

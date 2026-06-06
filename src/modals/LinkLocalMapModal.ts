@@ -1,8 +1,8 @@
 import { App, Modal } from "obsidian";
 import { mount, unmount } from "svelte";
-import type { MapConfig } from "../types";
+import type { MapConfig } from 'src/types';
 import { ImageSuggestModal } from "./ImageSuggestModal";
-import LinkLocalMapForm from "../components/LinkLocalMapForm.svelte";
+import LinkLocalMapForm from 'src/components/LinkLocalMapForm.svelte';
 
 export class LinkLocalMapModal extends Modal {
   private currentMapId: string;

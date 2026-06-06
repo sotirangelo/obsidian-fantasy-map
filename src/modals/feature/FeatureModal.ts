@@ -1,8 +1,8 @@
 import { App, Modal } from "obsidian";
 import { mount, unmount } from "svelte";
-import type { MarkerProperties, PolygonProperties } from "../../types";
-import { DEFAULT_MARKER_COLOR } from "../../config";
-import FeatureForm from "../../components/FeatureForm.svelte";
+import type { MarkerProperties, PolygonProperties } from 'src/types';
+import { DEFAULT_MARKER_COLOR } from 'src/config';
+import FeatureForm from 'src/components/FeatureForm.svelte';
 import { NoteSuggestModal } from "./NoteSuggestModal";
 import { TagSuggestModal } from "./TagSuggestModal";
 import { FeatureSuggestModal } from "./FeatureSuggestModal";

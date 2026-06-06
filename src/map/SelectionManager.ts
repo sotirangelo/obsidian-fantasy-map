@@ -6,7 +6,7 @@ import type {
   PolygonProperties,
   PolygonFeature,
   SidebarState,
-} from "../types";
+} from 'src/types';
 
 export class SelectionManager {
   private map: L.Map;

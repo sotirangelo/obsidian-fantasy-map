@@ -1,7 +1,7 @@
 import { Notice } from "obsidian";
 import * as L from "leaflet";
 import { pixelDistance } from "./scales";
-import { SetScaleModal } from "../modals";
+import { SetScaleModal } from 'src/modals';
 
 export type CalibrationMode = "off" | "point1" | "point2";
 

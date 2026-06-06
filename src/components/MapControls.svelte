@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { icon } from "../utils";
+  import { icon } from 'src/utils';
   import * as L from "leaflet";
-  import { DEFAULT_MARKER_COLOR } from "../config";
+  import { DEFAULT_MARKER_COLOR } from 'src/config';
 
   interface Props {
     map: L.Map;

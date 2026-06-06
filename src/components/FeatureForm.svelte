@@ -1,9 +1,9 @@
 <script lang="ts">
   import { untrack } from "svelte";
   import * as v from "valibot";
-  import type { MarkerProperties, PolygonProperties } from "../types";
-  import { FeatureRingSchema } from "../schemas";
-  import { icon } from "../utils";
+  import type { MarkerProperties, PolygonProperties } from 'src/types';
+  import { FeatureRingSchema } from 'src/schemas';
+  import { icon } from 'src/utils';
 
   interface RelationEntry {
     featureId: string;

@@ -1,6 +1,6 @@
 import * as L from "leaflet";
 import { Notice } from "obsidian";
-import { ManageLayersModal, NameInputModal } from "../modals";
+import { ManageLayersModal, NameInputModal } from 'src/modals';
 import type {
   LayerConfig,
   LoadedLayer,
@@ -8,7 +8,7 @@ import type {
   MarkerProperties,
   PolygonFeature,
   PolygonProperties,
-} from "../types";
+} from 'src/types';
 import { offsetPolygonOutward } from "./geometry";
 import { loadConfiguredLayers } from "./layers";
 import type { MapContext } from "./context";

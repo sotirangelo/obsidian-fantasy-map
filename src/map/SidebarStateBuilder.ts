@@ -8,7 +8,7 @@ import type {
   PolygonFeature,
   PolygonProperties,
   SidebarState,
-} from "../types";
+} from 'src/types';
 import { createMarkerFromFeature } from "./markers";
 import { findIncomingRelations } from "./SelectionManager";
 import type { MapContext } from "./context";

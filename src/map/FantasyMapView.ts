@@ -2,23 +2,23 @@ import { ItemView, WorkspaceLeaf, Notice, Menu } from "obsidian";
 import * as L from "leaflet";
 import "@geoman-io/leaflet-geoman-free";
 import { mount, unmount } from "svelte";
-import type FantasyMapPlugin from "../main";
+import type FantasyMapPlugin from 'src/main';
 import type {
   LayerConfig,
   LoadedLayer,
   MapConfig,
   SidebarState,
-} from "../types";
-import { MAP_CONFIG } from "../config";
+} from 'src/types';
+import { MAP_CONFIG } from 'src/config';
 import { pickNiceDistance } from "./scales";
 import { createScaleBar } from "./controls";
 import { CalibrationHandler } from "./CalibrationHandler";
 import { MeasureHandler } from "./MeasureHandler";
 import { SelectionManager } from "./SelectionManager";
-import Sidebar from "../components/Sidebar.svelte";
-import MapControls from "../components/MapControls.svelte";
-import { renderCreateMapForm } from "../modals/CreateMapModal";
-import { ImageSuggestModal } from "../modals/ImageSuggestModal";
+import Sidebar from 'src/components/Sidebar.svelte';
+import MapControls from 'src/components/MapControls.svelte';
+import { renderCreateMapForm } from 'src/modals/CreateMapModal';
+import { ImageSuggestModal } from 'src/modals/ImageSuggestModal';
 import { loadImageAsBlobUrl, getImageDimensions } from "./image";
 import type { MapContext } from "./context";
 import { LocalMapLinker } from "./LocalMapLinker";

@@ -1,6 +1,6 @@
 import * as L from "leaflet";
-import type { MarkerProperties } from "../types";
-import { DEFAULT_MARKER_COLOR } from "../config";
+import type { MarkerProperties } from 'src/types';
+import { DEFAULT_MARKER_COLOR } from 'src/config';
 
 const DOT_SIZE = 12;
 

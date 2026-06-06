@@ -1,5 +1,5 @@
 import { App, FuzzySuggestModal } from "obsidian";
-import type { MapConfig } from "../types";
+import type { MapConfig } from 'src/types';
 
 type PickerItem =
   | { kind: "map"; map: MapConfig; displayName: string }

@@ -1,6 +1,6 @@
 <script lang="ts">
   import { untrack } from "svelte";
-  import type { MapConfig } from "../types";
+  import type { MapConfig } from 'src/types';
 
   interface Props {
     existingMaps: MapConfig[];
