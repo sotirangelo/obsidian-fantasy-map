@@ -1,6 +1,6 @@
 import { Plugin, TAbstractFile } from "obsidian";
 import * as v from "valibot";
-import { FantasyMapView, FANTASY_MAP_VIEW } from "./map/view";
+import { FantasyMapView, FANTASY_MAP_VIEW } from "./map/FantasyMapView";
 import { MapPickerModal, CreateMapModal, DeleteConfirmModal } from "./modals";
 import { DEFAULT_SETTINGS } from "./types";
 import type { FantasyMapSettings } from "./types";

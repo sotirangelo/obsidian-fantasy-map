@@ -12,7 +12,7 @@ import type {
 import { offsetPolygonOutward } from "./geometry";
 import { loadConfiguredLayers } from "./layers";
 import type { MapContext } from "./context";
-import type { SidebarStateBuilder } from "./sidebar-state";
+import type { SidebarStateBuilder } from "./SidebarStateBuilder";
 
 export class LayerManager {
   constructor(
@@ -89,7 +89,9 @@ export class LayerManager {
           leafletFeature.on("pm:drag", () => {
             const tooltip = leafletFeature.getTooltip();
             if (tooltip) {
-              tooltip.setLatLng((leafletFeature as L.Polygon).getBounds().getCenter());
+              tooltip.setLatLng(
+                (leafletFeature as L.Polygon).getBounds().getCenter(),
+              );
             }
           });
           this.sidebarBuilder.attachPolygonInteraction(
@@ -99,7 +101,9 @@ export class LayerManager {
           );
           if (props.ring) {
             const outerLatLngs = offsetPolygonOutward(
-              (leafletFeature as L.Polygon).getLatLngs() as L.LatLng[] | L.LatLng[][],
+              (leafletFeature as L.Polygon).getLatLngs() as
+                | L.LatLng[]
+                | L.LatLng[][],
               props.ring.radius * pxPerUnit,
             );
             const ringPoly = L.polygon(outerLatLngs, {

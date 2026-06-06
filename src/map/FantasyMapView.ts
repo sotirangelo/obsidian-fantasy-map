@@ -12,18 +12,19 @@ import type {
 import { MAP_CONFIG } from "../config";
 import { pickNiceDistance } from "./scales";
 import { createScaleBar } from "./controls";
-import { CalibrationHandler } from "./calibration";
-import { MeasureHandler } from "./measure";
-import { SelectionManager } from "./selection";
+import { CalibrationHandler } from "./CalibrationHandler";
+import { MeasureHandler } from "./MeasureHandler";
+import { SelectionManager } from "./SelectionManager";
 import Sidebar from "../components/Sidebar.svelte";
 import MapControls from "../components/MapControls.svelte";
-import { ImageSuggestModal, renderCreateMapForm } from "../modals/create-map";
+import { renderCreateMapForm } from "../modals/CreateMapModal";
+import { ImageSuggestModal } from "../modals/ImageSuggestModal";
 import { loadImageAsBlobUrl, getImageDimensions } from "./image";
 import type { MapContext } from "./context";
-import { LocalMapLinker } from "./local-map";
-import { FeatureController } from "./feature-controller";
-import { SidebarStateBuilder } from "./sidebar-state";
-import { LayerManager } from "./layer-management";
+import { LocalMapLinker } from "./LocalMapLinker";
+import { FeatureController } from "./FeatureController";
+import { SidebarStateBuilder } from "./SidebarStateBuilder";
+import { LayerManager } from "./LayerManager";
 
 export const FANTASY_MAP_VIEW = "fantasy-map-view";
 

@@ -10,10 +10,10 @@ import type {
   SidebarState,
 } from "../types";
 import { createMarkerFromFeature } from "./markers";
-import { findIncomingRelations } from "./selection";
+import { findIncomingRelations } from "./SelectionManager";
 import type { MapContext } from "./context";
-import type { FeatureController } from "./feature-controller";
-import type { LocalMapLinker } from "./local-map";
+import type { FeatureController } from "./FeatureController";
+import type { LocalMapLinker } from "./LocalMapLinker";
 
 export function getAllFeatureRefs(
   layers: LoadedLayer[],

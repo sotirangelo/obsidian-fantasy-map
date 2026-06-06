@@ -14,8 +14,8 @@ import type {
   PolygonProperties,
 } from "../types";
 import type { MapContext } from "./context";
-import type { LocalMapLinker } from "./local-map";
-import { getAllFeatureRefs } from "./sidebar-state";
+import type { LocalMapLinker } from "./LocalMapLinker";
+import { getAllFeatureRefs } from "./SidebarStateBuilder";
 
 type PromptAddLayer = (onCreated: () => void) => void;
 

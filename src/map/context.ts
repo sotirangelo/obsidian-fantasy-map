@@ -6,7 +6,7 @@ import type {
   ObsidianApp,
   SidebarState,
 } from "../types";
-import type { SelectionManager } from "./selection";
+import type { SelectionManager } from "./SelectionManager";
 
 export interface MapContext {
   app: ObsidianApp;

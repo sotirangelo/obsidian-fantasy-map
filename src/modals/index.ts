@@ -1,10 +1,11 @@
-export { FeatureModal } from "./feature";
-export { DeleteConfirmModal } from "./confirm-delete";
-export { NoteSuggestModal, FeatureSuggestModal } from "./link-note";
-export { MapPickerModal } from "./pick-map";
-export { CreateMapModal, ImageSuggestModal } from "./create-map";
-export { SetScaleModal } from "./set-scale";
-export { LinkLocalMapModal } from "./link-local-map";
-export { NameInputModal } from "./name-input";
-export { RelationLabelModal } from "./relation-label";
-export { ManageLayersModal } from "./manage-layers";
+export * from "./feature";
+
+export { DeleteConfirmModal } from "./DeleteConfirmModal";
+export { MapPickerModal } from "./MapPickerModal";
+export { CreateMapModal } from "./CreateMapModal";
+export { ImageSuggestModal } from "./ImageSuggestModal";
+export { SetScaleModal } from "./SetScaleModal";
+export { LinkLocalMapModal } from "./LinkLocalMapModal";
+export { NameInputModal } from "./NameInputModal";
+export { RelationLabelModal } from "./RelationLabelModal";
+export { ManageLayersModal } from "./ManageLayersModal";
