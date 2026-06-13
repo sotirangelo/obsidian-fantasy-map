@@ -16,7 +16,7 @@ import type {
 } from 'src/types';
 import type { MapContext } from "./context";
 import type { LocalMapLinker } from "./LocalMapLinker";
-import { getAllFeatureRefs } from "./SidebarStateBuilder";
+import { getAllFeatureRefs, getId } from "./featureIndex";
 
 type PromptAddLayer = (onCreated: () => void) => void;
 
@@ -123,7 +123,7 @@ export class FeatureController {
       layerOptions,
       (updatedProperties, selectedLayerId) => {
         const featureIndex = layer.data.features.findIndex(
-          (f) => (f.properties as { id: string }).id === properties.id,
+          (f) => getId(f) === properties.id,
         );
         if (featureIndex < 0) return;
 
@@ -164,7 +164,7 @@ export class FeatureController {
     new FeatureSuggestModal(this.ctx.app, allFeatures, (feature) => {
       new RelationLabelModal(this.ctx.app, (label) => {
         const featureIndex = layer.data.features.findIndex(
-          (f) => (f.properties as { id: string }).id === properties.id,
+          (f) => getId(f) === properties.id,
         );
         if (featureIndex < 0) return;
         const fAdd = layer.data.features[featureIndex];
@@ -193,7 +193,7 @@ export class FeatureController {
       `Are you sure you want to delete the relation to "${targetName}"`,
       () => {
         const featureIndex = layer.data.features.findIndex(
-          (f) => (f.properties as { id: string }).id === properties.id,
+          (f) => getId(f) === properties.id,
         );
         if (featureIndex < 0) return;
         const fRem = layer.data.features[featureIndex];
@@ -219,7 +219,7 @@ export class FeatureController {
       `Are you sure you want to delete marker "${properties.name}"`,
       () => {
         layer.data.features = layer.data.features.filter(
-          (f) => (f.properties as { id: string }).id !== properties.id,
+          (f) => getId(f) !== properties.id,
         );
         void this.ctx.saveLayer(layer);
         this.ctx.refreshMapLayers();

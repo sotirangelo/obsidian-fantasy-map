@@ -10,56 +10,15 @@ import type {
   SidebarState,
 } from 'src/types';
 import { createMarkerFromFeature } from "./markers";
-import { findIncomingRelations } from "./SelectionManager";
+import {
+  findFeatureById,
+  findIncomingRelations,
+  findLeafletLayerById,
+  getAllFeatureRefs,
+} from "./featureIndex";
 import type { MapContext } from "./context";
 import type { FeatureController } from "./FeatureController";
 import type { LocalMapLinker } from "./LocalMapLinker";
-
-export function getAllFeatureRefs(
-  layers: LoadedLayer[],
-  excludeId?: string,
-): { id: string; name: string }[] {
-  const features: { id: string; name: string }[] = [];
-  for (const layer of layers) {
-    for (const feature of layer.data.features) {
-      const props = feature.properties as { id: string; name: string };
-      if (props.id !== excludeId) {
-        features.push({ id: props.id, name: props.name });
-      }
-    }
-  }
-  return features;
-}
-
-function findFeatureById(
-  featureId: string,
-  layers: LoadedLayer[],
-): { feature: MapFeature; layer: LoadedLayer } | undefined {
-  for (const loaded of layers) {
-    const feature = loaded.data.features.find(
-      (f) => (f.properties as { id: string }).id === featureId,
-    ) as MapFeature | undefined;
-    if (feature) return { feature, layer: loaded };
-  }
-  return undefined;
-}
-
-function findLeafletLayerForFeature(
-  featureId: string,
-  layers: LoadedLayer[],
-): L.Layer | undefined {
-  for (const loaded of layers) {
-    if (!loaded.leafletLayer) continue;
-    let found: L.Layer | undefined;
-    loaded.leafletLayer.eachLayer((l) => {
-      const f = (l as L.Layer & { feature?: { properties?: { id?: string } } })
-        .feature;
-      if (f?.properties?.id === featureId) found = l;
-    });
-    if (found) return found;
-  }
-  return undefined;
-}
 
 function resolveRelations(
   props: MarkerProperties | PolygonProperties,
@@ -91,7 +50,7 @@ export class SidebarStateBuilder {
       featureType,
       properties: props,
       relations: resolveRelations(props, this.ctx.layers),
-      incomingRelations: findIncomingRelations(props.id, this.ctx.layers),
+      incomingRelations: findIncomingRelations(this.ctx.layers, props.id),
       onOpenNote: (path: string) => {
         void this.ctx.app.workspace.openLinkText(path, "", false);
       },
@@ -130,7 +89,7 @@ export class SidebarStateBuilder {
         this.featureCtrl.removeRelation(props, layer, targetFeatureId);
       },
       onSelectFeature: (featureId: string) => {
-        const found = findFeatureById(featureId, this.ctx.layers);
+        const found = findFeatureById(this.ctx.layers, featureId);
         if (!found) return;
         const featureType =
           found.feature.geometry.type === "Point" ? "marker" : "polygon";
@@ -140,10 +99,7 @@ export class SidebarStateBuilder {
           found.feature,
           found.layer,
         );
-        const leafletLayer = findLeafletLayerForFeature(
-          featureId,
-          this.ctx.layers,
-        );
+        const leafletLayer = findLeafletLayerById(this.ctx.layers, featureId);
         this.ctx.selectFeature(state, leafletLayer);
         if (leafletLayer) {
           const center =

@@ -2,11 +2,10 @@ import * as L from "leaflet";
 import type {
   LoadedLayer,
   MapFeature,
-  MarkerProperties,
-  PolygonProperties,
   PolygonFeature,
   SidebarState,
 } from 'src/types';
+import { findIncomingRelations, findLeafletLayerById } from "./featureIndex";
 
 export class SelectionManager {
   private map: L.Map;
@@ -166,7 +165,7 @@ export class SelectionManager {
   private highlightRelations(state: SidebarState, layers: LoadedLayer[]): void {
     // Outgoing relations
     for (const rel of state.relations ?? []) {
-      const relatedLayer = this.findLeafletLayerById(rel.featureId, layers);
+      const relatedLayer = findLeafletLayerById(layers, rel.featureId);
       if (!relatedLayer) continue;
       const latlng = this.getLayerLatLng(relatedLayer);
       if (!latlng) continue;
@@ -176,9 +175,9 @@ export class SelectionManager {
 
     // Incoming relations
     const featureId = (state.properties as { id: string }).id;
-    const incoming = findIncomingRelations(featureId, layers);
+    const incoming = findIncomingRelations(layers, featureId);
     for (const rel of incoming) {
-      const relatedLayer = this.findLeafletLayerById(rel.featureId, layers);
+      const relatedLayer = findLeafletLayerById(layers, rel.featureId);
       if (!relatedLayer) continue;
       const latlng = this.getLayerLatLng(relatedLayer);
       if (!latlng) continue;
@@ -211,7 +210,7 @@ export class SelectionManager {
     const from = this.getLayerLatLng(leafletLayer);
     if (!from) return;
 
-    const incoming = findIncomingRelations(selectedId, layers);
+    const incoming = findIncomingRelations(layers, selectedId);
 
     for (const rel of outgoing) {
       const to = this.getFeatureLatLng(rel.featureId, layers);
@@ -328,28 +327,11 @@ export class SelectionManager {
     this.relationArrows = [];
   }
 
-  private findLeafletLayerById(
-    featureId: string,
-    layers: LoadedLayer[],
-  ): L.Layer | null {
-    for (const loadedLayer of layers) {
-      if (!loadedLayer.leafletLayer) continue;
-      const sublayers: L.Layer[] = [];
-      loadedLayer.leafletLayer.eachLayer((layer) => sublayers.push(layer));
-      const found = sublayers.find((layer) => {
-        const f = (layer as unknown as { feature?: MapFeature }).feature;
-        return (f?.properties as { id?: string } | undefined)?.id === featureId;
-      });
-      if (found !== undefined) return found;
-    }
-    return null;
-  }
-
   private getFeatureLatLng(
     featureId: string,
     layers: LoadedLayer[],
   ): L.LatLng | null {
-    const layer = this.findLeafletLayerById(featureId, layers);
+    const layer = findLeafletLayerById(layers, featureId);
     if (!layer) return null;
     return this.getLayerLatLng(layer);
   }
@@ -359,28 +341,4 @@ export class SelectionManager {
     if (layer instanceof L.Polygon) return layer.getBounds().getCenter();
     return null;
   }
-}
-
-export function findIncomingRelations(
-  featureId: string,
-  layers: LoadedLayer[],
-): { featureId: string; featureName: string; label: string }[] {
-  const incoming: { featureId: string; featureName: string; label: string }[] =
-    [];
-  for (const layer of layers) {
-    for (const feature of layer.data.features) {
-      const props = feature.properties as MarkerProperties | PolygonProperties;
-      if (props.id === featureId) continue;
-      for (const rel of props.relations ?? []) {
-        if (rel.featureId === featureId) {
-          incoming.push({
-            featureId: props.id,
-            featureName: props.name,
-            label: rel.label,
-          });
-        }
-      }
-    }
-  }
-  return incoming;
 }

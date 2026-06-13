@@ -24,8 +24,25 @@ import { LocalMapLinker } from "./LocalMapLinker";
 import { FeatureController } from "./FeatureController";
 import { SidebarStateBuilder } from "./SidebarStateBuilder";
 import { LayerManager } from "./LayerManager";
+import { Disposables } from "./disposables";
 
 export const FANTASY_MAP_VIEW = "fantasy-map-view";
+
+interface ImageDimensions {
+  width: number;
+  height: number;
+}
+
+interface MapHandlers {
+  calibration: CalibrationHandler;
+  measure: MeasureHandler;
+  selection: SelectionManager;
+}
+
+interface MapControllers {
+  featureCtrl: FeatureController;
+  layerMgr: LayerManager;
+}
 
 export class FantasyMapView extends ItemView {
   plugin: FantasyMapPlugin;
@@ -35,17 +52,11 @@ export class FantasyMapView extends ItemView {
   private map: L.Map | null = null;
   private layers: LoadedLayer[] = [];
   private selection: SelectionManager | null = null;
-  private calibration: CalibrationHandler | null = null;
-  private measure: MeasureHandler | null = null;
-
-  private blobUrl: string | null = null;
   private sidebarEl: HTMLDivElement | null = null;
-  private sidebarComponent: ReturnType<typeof mount> | null = null;
-  private controlsEl: HTMLDivElement | null = null;
-  private controlsComponent: ReturnType<typeof mount> | null = null;
   private updateSidebar: ((state: SidebarState | null) => void) | null = null;
   private shapeEditingActive = false;
   private scaleBar: ScaleBarController | null = null;
+  private disposables = new Disposables();
 
   constructor(leaf: WorkspaceLeaf, plugin: FantasyMapPlugin) {
     super(leaf);
@@ -57,8 +68,7 @@ export class FantasyMapView extends ItemView {
   }
 
   getDisplayText(): string {
-    const config = this.getMapConfig();
-    return config?.name ?? "Fantasy Map";
+    return this.getMapConfig()?.name ?? "Fantasy Map";
   }
 
   getIcon(): string {
@@ -82,6 +92,10 @@ export class FantasyMapView extends ItemView {
     await this.renderMap();
   }
 
+  async onClose(): Promise<void> {
+    await Promise.resolve(this.cleanup());
+  }
+
   private async renderMap(): Promise<void> {
     this.cleanup();
 
@@ -91,22 +105,7 @@ export class FantasyMapView extends ItemView {
 
     const config = this.getMapConfig();
     if (!config) {
-      const formWrapper = container.createDiv({
-        cls: "fantasy-map-create-form-wrapper",
-      });
-      renderCreateMapForm(formWrapper, this.app, (name, imagePath) => {
-        const newMap = {
-          id: window.crypto.randomUUID(),
-          name,
-          mapImagePath: imagePath,
-          layers: [],
-        };
-        this.plugin.settings.maps.push(newMap);
-        void this.plugin.saveSettings().then(() => {
-          this.mapId = newMap.id;
-          void this.renderMap();
-        });
-      });
+      this.renderCreateForm(container);
       return;
     }
 
@@ -118,52 +117,84 @@ export class FantasyMapView extends ItemView {
       return;
     }
 
-    this.sidebarEl = container.createDiv({
+    this.mountSidebar(container);
+
+    try {
+      const imageUrl = await loadImageAsBlobUrl(this.app, config.mapImagePath);
+      this.disposables.add(() => URL.revokeObjectURL(imageUrl));
+      const dimensions = await getImageDimensions(imageUrl);
+      this.initializeMap(imageUrl, dimensions, config);
+    } catch (error) {
+      this.renderLoadError(container, config, error);
+    }
+
+    (this.leaf as unknown as { updateHeader?: () => void }).updateHeader?.();
+  }
+
+  private renderCreateForm(container: HTMLElement): void {
+    const formWrapper = container.createDiv({
+      cls: "fantasy-map-create-form-wrapper",
+    });
+    renderCreateMapForm(formWrapper, this.app, (name, imagePath) => {
+      const newMap = {
+        id: window.crypto.randomUUID(),
+        name,
+        mapImagePath: imagePath,
+        layers: [],
+      };
+      this.plugin.settings.maps.push(newMap);
+      void this.plugin.saveSettings().then(() => {
+        this.mapId = newMap.id;
+        void this.renderMap();
+      });
+    });
+  }
+
+  private renderLoadError(
+    container: HTMLElement,
+    config: MapConfig,
+    error: unknown,
+  ): void {
+    const isNotFound =
+      error instanceof Error &&
+      error.message.startsWith("Map image not found");
+    if (isNotFound) {
+      const errorEl = container.createDiv({ cls: "fantasy-map-error" });
+      errorEl.createEl("p", {
+        text: `Map image not found: "${config.mapImagePath}". Please choose a new image.`,
+      });
+      const btn = errorEl.createEl("button", { text: "Browse for image…" });
+      btn.addEventListener("click", () => {
+        new ImageSuggestModal(this.app, (file) => {
+          config.mapImagePath = file.path;
+          void this.plugin.saveSettings().then(() => void this.renderMap());
+        }).open();
+      });
+    } else {
+      const message = error instanceof Error ? error.message : "Unknown error";
+      container.createEl("p", {
+        text: `Failed to load map: ${message}`,
+        cls: "fantasy-map-error",
+      });
+    }
+  }
+
+  private mountSidebar(container: HTMLElement): void {
+    const sidebarEl = container.createDiv({
       cls: "fantasy-map-sidebar fantasy-map-sidebar--hidden",
     });
-
+    this.sidebarEl = sidebarEl;
     this.mapContainerEl = container.createDiv({ cls: "fantasy-map-container" });
-    this.sidebarComponent = mount(Sidebar, {
-      target: this.sidebarEl,
+
+    const sidebarComponent = mount(Sidebar, {
+      target: sidebarEl,
       props: {
         registerUpdate: (fn: (state: SidebarState | null) => void) => {
           this.updateSidebar = fn;
         },
       },
     });
-
-    try {
-      const imageUrl = await loadImageAsBlobUrl(this.app, config.mapImagePath);
-      this.blobUrl = imageUrl;
-      const dimensions = await getImageDimensions(imageUrl);
-      this.initializeMap(imageUrl, dimensions, config);
-    } catch (error) {
-      const isNotFound =
-        error instanceof Error &&
-        error.message.startsWith("Map image not found");
-      if (isNotFound) {
-        const errorEl = container.createDiv({ cls: "fantasy-map-error" });
-        errorEl.createEl("p", {
-          text: `Map image not found: "${config.mapImagePath}". Please choose a new image.`,
-        });
-        const btn = errorEl.createEl("button", { text: "Browse for image…" });
-        btn.addEventListener("click", () => {
-          new ImageSuggestModal(this.app, (file) => {
-            config.mapImagePath = file.path;
-            void this.plugin.saveSettings().then(() => void this.renderMap());
-          }).open();
-        });
-      } else {
-        const message =
-          error instanceof Error ? error.message : "Unknown error";
-        container.createEl("p", {
-          text: `Failed to load map: ${message}`,
-          cls: "fantasy-map-error",
-        });
-      }
-    }
-
-    (this.leaf as unknown as { updateHeader?: () => void }).updateHeader?.();
+    this.disposables.add(() => void unmount(sidebarComponent));
   }
 
   private getMapConfig(): MapConfig | undefined {
@@ -172,59 +203,66 @@ export class FantasyMapView extends ItemView {
   }
 
   private cleanup(): void {
+    this.disposables.disposeAll();
     if (this.map) {
       this.map.remove();
       this.map = null;
     }
-    if (this.blobUrl) {
-      URL.revokeObjectURL(this.blobUrl);
-      this.blobUrl = null;
-    }
-    if (this.sidebarComponent) {
-      void unmount(this.sidebarComponent);
-      this.sidebarComponent = null;
-    }
-    if (this.controlsComponent) {
-      void unmount(this.controlsComponent);
-      this.controlsComponent = null;
-    }
-    this.updateSidebar = null;
-    this.sidebarEl = null;
-    this.controlsEl = null;
-    this.layers = [];
+    this.selection?.clear();
     this.scaleBar?.dispose();
     this.scaleBar = null;
-    this.selection?.clear();
     this.selection = null;
-    this.calibration?.cleanup();
-    this.calibration = null;
-    this.measure?.cleanup();
-    this.measure = null;
-  }
-
-  async onClose(): Promise<void> {
-    await Promise.resolve(this.cleanup());
+    this.updateSidebar = null;
+    this.sidebarEl = null;
+    this.mapContainerEl = null;
+    this.layers = [];
   }
 
   private initializeMap(
     imageUrl: string,
-    dimensions: { width: number; height: number },
+    dimensions: ImageDimensions,
     config: MapConfig,
   ): void {
     if (!this.mapContainerEl || !this.mapId) return;
 
+    const { map, layerControl } = this.createLeafletMap(
+      this.mapContainerEl,
+      imageUrl,
+      dimensions,
+    );
+    this.map = map;
+
+    const handlers = this.createHandlers(map);
+    this.selection = handlers.selection;
+
+    const ctx = this.buildContext(config, map, layerControl, handlers.selection);
+    const localMapLinker = new LocalMapLinker(ctx);
+    const controllers = this.createControllers(ctx, localMapLinker);
+
+    this.mountMapControls(map, config, handlers, controllers.layerMgr);
+
+    this.scaleBar = new ScaleBarController(map);
+    if (config.scale) this.scaleBar.render(config);
+
+    this.wireMapEvents(map, handlers, controllers.featureCtrl);
+
+    controllers.layerMgr.loadAndDisplay();
+  }
+
+  private createLeafletMap(
+    container: HTMLDivElement,
+    imageUrl: string,
+    dimensions: ImageDimensions,
+  ): { map: L.Map; layerControl: L.Control.Layers } {
     const bounds: L.LatLngBoundsExpression = [
       [0, 0],
       [dimensions.height, dimensions.width],
     ];
-
-    const map = L.map(this.mapContainerEl, {
+    const map = L.map(container, {
       crs: L.CRS.Simple,
       zoomControl: false,
       ...MAP_CONFIG,
     });
-    this.map = map;
-
     L.imageOverlay(imageUrl, bounds).addTo(map);
     map.fitBounds(bounds);
 
@@ -232,6 +270,10 @@ export class FantasyMapView extends ItemView {
       .layers({}, {}, { position: "topright" })
       .addTo(map);
 
+    return { map, layerControl };
+  }
+
+  private createHandlers(map: L.Map): MapHandlers {
     const calibration = new CalibrationHandler(
       map,
       () => this.app,
@@ -254,18 +296,26 @@ export class FantasyMapView extends ItemView {
         });
       },
     );
-    this.calibration = calibration;
+    this.disposables.add(() => calibration.cleanup());
 
     const measure = new MeasureHandler(map, () => this.getMapConfig());
-    this.measure = measure;
+    this.disposables.add(() => measure.cleanup());
 
     const selection = new SelectionManager(map);
-    this.selection = selection;
 
-    const ctx: MapContext = {
+    return { calibration, measure, selection };
+  }
+
+  private buildContext(
+    config: MapConfig,
+    map: L.Map,
+    layerControl: L.Control.Layers,
+    selection: SelectionManager,
+  ): MapContext {
+    return {
       app: this.app,
       plugin: this.plugin,
-      mapId: this.mapId,
+      mapId: this.mapId!,
       config,
       map,
       layers: this.layers,
@@ -276,10 +326,16 @@ export class FantasyMapView extends ItemView {
       saveLayer: (layer) => this.saveLayer(layer),
       refreshMapLayers: () => this.refreshMapLayers(),
     };
+  }
 
-    const localMapLinker = new LocalMapLinker(ctx);
-    // promptAddLayer closes over layerMgr declared below; only invoked on user
-    // action after init, so the binding is always set by call time.
+  private createControllers(
+    ctx: MapContext,
+    localMapLinker: LocalMapLinker,
+  ): MapControllers {
+    // FeatureController and LayerManager have a circular need: FeatureController
+    // can prompt to add a layer, LayerManager uses SidebarStateBuilder which uses
+    // FeatureController. Late-bind layerMgr via closure — promptAddLayer is only
+    // ever called after init from user actions.
     let layerMgr!: LayerManager;
     const featureCtrl = new FeatureController(
       ctx,
@@ -293,17 +349,29 @@ export class FantasyMapView extends ItemView {
       this,
     );
     layerMgr = new LayerManager(ctx, sidebarBuilder);
+    return { featureCtrl, layerMgr };
+  }
+
+  private mountMapControls(
+    map: L.Map,
+    config: MapConfig,
+    handlers: MapHandlers,
+    layerMgr: LayerManager,
+  ): void {
+    if (!this.mapContainerEl) return;
+    const { calibration, measure } = handlers;
 
     const parentConfig = config.parentMapId
       ? this.plugin.settings.maps.find((m) => m.id === config.parentMapId)
       : undefined;
 
-    this.controlsEl = this.mapContainerEl.createDiv({
+    const controlsEl = this.mapContainerEl.createDiv({
       cls: "fantasy-map-controls-overlay",
     });
-    L.DomEvent.disableClickPropagation(this.controlsEl);
-    this.controlsComponent = mount(MapControls, {
-      target: this.controlsEl,
+    L.DomEvent.disableClickPropagation(controlsEl);
+
+    const controlsComponent = mount(MapControls, {
+      target: controlsEl,
       props: {
         map,
         onSetScale: (onDone: () => void) => calibration.start(onDone),
@@ -324,11 +392,15 @@ export class FantasyMapView extends ItemView {
           : undefined,
       },
     });
+    this.disposables.add(() => void unmount(controlsComponent));
+  }
 
-    this.scaleBar = new ScaleBarController(map);
-    if (config.scale) {
-      this.scaleBar.render(config);
-    }
+  private wireMapEvents(
+    map: L.Map,
+    handlers: MapHandlers,
+    featureCtrl: FeatureController,
+  ): void {
+    const { calibration, measure } = handlers;
 
     map.on("pm:create", (e: { shape?: string; layer: L.Layer }) => {
       if (e.shape === "Marker") {
@@ -360,8 +432,6 @@ export class FantasyMapView extends ItemView {
       if (measure.mode !== "off") return;
       this.showAddMarkerMenu(e, featureCtrl);
     });
-
-    layerMgr.loadAndDisplay();
   }
 
   private showAddMarkerMenu(
