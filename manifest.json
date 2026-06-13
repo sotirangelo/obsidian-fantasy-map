@@ -1,7 +1,7 @@
 {
   "id": "fantasy-map",
   "name": "Fantasy Map",
-  "version": "1.5.0",
+  "version": "1.6.0",
   "minAppVersion": "1.12.4",
   "description": "Display a fantasy campaign map with interactive Features linked to vault notes.",
   "author": "sotirangelo",
