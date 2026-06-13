@@ -204,6 +204,15 @@ export class SidebarStateBuilder {
     layer: LoadedLayer,
   ): void {
     leafletPolygon.on("click", (e: L.LeafletMouseEvent) => {
+      const pm = this.ctx.map.pm;
+      if (
+        pm.globalEditModeEnabled() ||
+        pm.globalDragModeEnabled() ||
+        pm.globalRemovalModeEnabled() ||
+        pm.globalDrawModeEnabled()
+      ) {
+        return;
+      }
       L.DomEvent.stopPropagation(e);
       this.ctx.selectFeature(
         this.build("polygon", feature.properties, feature, layer),
