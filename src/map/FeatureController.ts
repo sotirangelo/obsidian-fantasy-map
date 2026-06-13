@@ -8,6 +8,7 @@ import {
 } from 'src/modals';
 import type {
   LoadedLayer,
+  MapFeature,
   MarkerFeature,
   MarkerProperties,
   PolygonFeature,
@@ -34,63 +35,21 @@ export class FeatureController {
   }
 
   openAddMarker(latlng: L.LatLng): void {
-    const layerOptions = this.getLayerOptions();
-
-    if (layerOptions.length === 0) {
-      this.promptAddLayer(() => this.openAddMarker(latlng));
-      return;
-    }
-
-    new FeatureModal(
-      this.ctx.app,
+    this.openAdd(
       "marker",
-      null,
-      layerOptions,
-      (properties, selectedLayerId) => {
-        const feature: MarkerFeature = {
-          type: "Feature",
-          geometry: {
-            type: "Point",
-            coordinates: [latlng.lng, latlng.lat],
-          },
-          properties,
-        };
-
-        const layer = this.ctx.layers.find(
-          (l) => l.config.id === selectedLayerId,
-        );
-        if (!layer) {
-          new Notice("Layer not found");
-          return;
-        }
-
-        layer.data.features.push(feature);
-        void this.ctx.saveLayer(layer);
-        this.ctx.refreshMapLayers();
-      },
-      (featureId, cb) => {
-        this.localMapLinker.openLinkForNew(featureId, cb);
-      },
-      getAllFeatureRefs(this.ctx.layers),
-      undefined,
-      this.ctx.config.scale?.unit,
-    ).open();
+      (properties): MarkerFeature => ({
+        type: "Feature",
+        geometry: { type: "Point", coordinates: [latlng.lng, latlng.lat] },
+        properties,
+      }),
+      () => this.openAddMarker(latlng),
+    );
   }
 
   openAddPolygon(polygon: L.Polygon): void {
-    const layerOptions = this.getLayerOptions();
-
-    if (layerOptions.length === 0) {
-      this.promptAddLayer(() => this.openAddPolygon(polygon));
-      return;
-    }
-
-    new FeatureModal(
-      this.ctx.app,
+    this.openAdd(
       "polygon",
-      null,
-      layerOptions,
-      (properties, selectedLayerId) => {
+      (properties): PolygonFeature => {
         const latLngs = polygon.getLatLngs() as L.LatLng[][];
         const coordinates: [number, number][][] = latLngs.map((ring) =>
           ring.map((ll) => [ll.lng, ll.lat] as [number, number]),
@@ -102,13 +61,35 @@ export class FeatureController {
             ring.push(first);
           }
         }
-
-        const feature: PolygonFeature = {
+        return {
           type: "Feature",
           geometry: { type: "Polygon", coordinates },
           properties,
         };
+      },
+      () => this.openAddPolygon(polygon),
+    );
+  }
 
+  private openAdd(
+    type: "marker" | "polygon",
+    buildFeature: (
+      properties: MarkerProperties | PolygonProperties,
+    ) => MapFeature,
+    retry: () => void,
+  ): void {
+    const layerOptions = this.getLayerOptions();
+    if (layerOptions.length === 0) {
+      this.promptAddLayer(retry);
+      return;
+    }
+
+    new FeatureModal(
+      this.ctx.app,
+      type,
+      null,
+      layerOptions,
+      (properties, selectedLayerId) => {
         const layer = this.ctx.layers.find(
           (l) => l.config.id === selectedLayerId,
         );
@@ -116,8 +97,7 @@ export class FeatureController {
           new Notice("Layer not found");
           return;
         }
-
-        layer.data.features.push(feature);
+        layer.data.features.push(buildFeature(properties));
         void this.ctx.saveLayer(layer);
         this.ctx.refreshMapLayers();
       },

@@ -14,6 +14,19 @@ import { loadConfiguredLayers } from "./layers";
 import type { MapContext } from "./context";
 import type { SidebarStateBuilder } from "./SidebarStateBuilder";
 
+function ringStyle(color: string): L.PathOptions {
+  return {
+    color,
+    fillColor: color,
+    fillOpacity: 0.08,
+    weight: 1.5,
+    dashArray: "6 4",
+    interactive: false,
+    pmIgnore: true,
+    className: "fantasy-map-feature-ring",
+  };
+}
+
 export class LayerManager {
   constructor(
     private ctx: MapContext,
@@ -62,15 +75,8 @@ export class LayerManager {
           if (props.ring) {
             const marker = leafletFeature as L.Marker;
             const circle = L.circle(marker.getLatLng(), {
+              ...ringStyle(props.ring.color),
               radius: props.ring.radius * pxPerUnit,
-              color: props.ring.color,
-              fillColor: props.ring.color,
-              fillOpacity: 0.08,
-              weight: 1.5,
-              dashArray: "6 4",
-              interactive: false,
-              pmIgnore: true,
-              className: "fantasy-map-feature-ring",
             });
             rings.addLayer(circle);
             marker.on("drag", () => circle.setLatLng(marker.getLatLng()));
@@ -108,16 +114,7 @@ export class LayerManager {
                 | L.LatLng[][],
               props.ring.radius * pxPerUnit,
             );
-            const ringPoly = L.polygon(outerLatLngs, {
-              color: props.ring.color,
-              fillColor: props.ring.color,
-              fillOpacity: 0.08,
-              weight: 1.5,
-              dashArray: "6 4",
-              interactive: false,
-              pmIgnore: true,
-              className: "fantasy-map-feature-ring",
-            });
+            const ringPoly = L.polygon(outerLatLngs, ringStyle(props.ring.color));
             rings.addLayer(ringPoly);
             ringPoly.bringToBack();
           }

@@ -10,8 +10,7 @@ import type {
   SidebarState,
 } from "src/types";
 import { MAP_CONFIG } from "src/config";
-import { pickNiceDistance } from "./scales";
-import { createScaleBar } from "./controls";
+import { ScaleBarController } from "./ScaleBarController";
 import { CalibrationHandler } from "./CalibrationHandler";
 import { MeasureHandler } from "./MeasureHandler";
 import { SelectionManager } from "./SelectionManager";
@@ -46,8 +45,7 @@ export class FantasyMapView extends ItemView {
   private controlsComponent: ReturnType<typeof mount> | null = null;
   private updateSidebar: ((state: SidebarState | null) => void) | null = null;
   private shapeEditingActive = false;
-  private scaleBarControl: L.Control | null = null;
-  private updateScaleBar: (() => void) | null = null;
+  private scaleBar: ScaleBarController | null = null;
 
   constructor(leaf: WorkspaceLeaf, plugin: FantasyMapPlugin) {
     super(leaf);
@@ -194,8 +192,8 @@ export class FantasyMapView extends ItemView {
     this.sidebarEl = null;
     this.controlsEl = null;
     this.layers = [];
-    this.scaleBarControl = null;
-    this.updateScaleBar = null;
+    this.scaleBar?.dispose();
+    this.scaleBar = null;
     this.selection?.clear();
     this.selection = null;
     this.calibration?.cleanup();
@@ -248,7 +246,7 @@ export class FantasyMapView extends ItemView {
           unit,
         };
         void this.plugin.saveSettings().then(() => {
-          this.renderScaleBar(cfg);
+          this.scaleBar?.render(cfg);
           this.refreshMapLayers();
           new Notice(
             `Scale set: ${realDistance.toString()} ${unit} between the two points`,
@@ -327,8 +325,9 @@ export class FantasyMapView extends ItemView {
       },
     });
 
+    this.scaleBar = new ScaleBarController(map);
     if (config.scale) {
-      this.renderScaleBar(config);
+      this.scaleBar.render(config);
     }
 
     map.on("pm:create", (e: { shape?: string; layer: L.Layer }) => {
@@ -363,28 +362,6 @@ export class FantasyMapView extends ItemView {
     });
 
     layerMgr.loadAndDisplay();
-  }
-
-  private renderScaleBar(config: MapConfig): void {
-    if (!this.map || !config.scale) return;
-
-    if (this.scaleBarControl) {
-      this.scaleBarControl.remove();
-      this.scaleBarControl = null;
-    }
-    if (this.updateScaleBar) {
-      this.map.off("zoomend", this.updateScaleBar);
-      this.updateScaleBar = null;
-    }
-
-    const { control, update } = createScaleBar(
-      this.map,
-      config.scale,
-      pickNiceDistance,
-    );
-    this.scaleBarControl = control;
-    this.updateScaleBar = update;
-    this.map.on("zoomend", this.updateScaleBar);
   }
 
   private showAddMarkerMenu(
