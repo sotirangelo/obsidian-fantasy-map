@@ -143,6 +143,7 @@ export class SelectionManager {
         fillOpacity: 0.15,
         className: "fantasy-map-selection-ring",
         interactive: false,
+        pmIgnore: true,
       }).addTo(this.map);
       const el = leafletLayer.getElement();
       if (el) {
@@ -195,6 +196,7 @@ export class SelectionManager {
       fillOpacity: 0.12,
       dashArray: "5 4",
       interactive: false,
+      pmIgnore: true,
       className: "fantasy-map-relation-ring",
     }).addTo(this.map);
     this.relationHighlights.push(ring);
@@ -256,6 +258,7 @@ export class SelectionManager {
       opacity: 0.8,
       dashArray: "8 4",
       interactive: false,
+      pmIgnore: true,
       className: "fantasy-map-relation-arrow",
     }).addTo(this.map);
     this.relationArrows.push(line);
@@ -293,6 +296,7 @@ export class SelectionManager {
       fillOpacity: 0.9,
       weight: 1,
       interactive: false,
+      pmIgnore: true,
       className: "fantasy-map-relation-arrowhead",
     }).addTo(this.map);
     this.relationArrows.push(arrowhead);

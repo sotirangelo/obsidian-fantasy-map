@@ -68,6 +68,7 @@ export class LayerManager {
               fillOpacity: 0.2,
               weight: 1,
               interactive: false,
+              pmIgnore: true,
               className: "fantasy-map-feature-ring",
             });
             rings.addLayer(circle);
@@ -112,6 +113,7 @@ export class LayerManager {
               fillOpacity: 0.2,
               weight: 1,
               interactive: false,
+              pmIgnore: true,
               className: "fantasy-map-feature-ring",
             });
             rings.addLayer(ringPoly);
