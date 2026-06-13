@@ -196,11 +196,29 @@
   pointer-events: none;
 }
 
-/* ── Measure Popup ────────────────────────────────────────────── */
+/* ── Measure Labels ───────────────────────────────────────────── */
 
-.fantasy-map-measure-popup .leaflet-popup-content {
-  margin: var(--size-2-3) 10px;
-  font-size: 0.9em;
+.fantasy-map-measure-label,
+.fantasy-map-measure-total {
+  background: var(--background-primary);
+  color: var(--text-normal);
+  border: 1px solid #3498db;
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: 0.85em;
+  font-weight: 500;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  white-space: nowrap;
+}
+
+.fantasy-map-measure-label::before,
+.fantasy-map-measure-total::before {
+  display: none;
+}
+
+.fantasy-map-measure-total {
+  color: #3498db;
+  font-weight: 600;
 }
 
 /* ── Empty & Error States ─────────────────────────────────────── */
